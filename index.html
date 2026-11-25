@@ -355,6 +355,7 @@ function installments(total,n){const base=Math.floor(total/n);return Array.from(
 
 /* ---------- estado ---------- */
 const KEY='contaadois.v2';
+const APP_VERSION='25/11 20:54';
 const STANDALONE=!window.claude; // fora do Claude: app instalado ou aberto direto no navegador
 const CATS=['Moradia','Mercado','Contas da casa','Transporte','Restaurantes','Lazer','Saúde','Compras','Assinaturas','Outros'];
 const ROOMS=['Sala','Cozinha','Quarto','Banheiro','Lavanderia','Escritório','Outros'];
@@ -795,7 +796,16 @@ function vAjustes(){
 
 function vMais(){
   const items=[['listas','listas','Listas','Mercado e compras para a casa'],['documentos','documentos','Documentos','Cofre de notas e contratos, e o inventário da casa'],['fechamento','check','Fechamento do mês','Resumo do mês e acerto entre vocês'],['ajustes','ajustes','Ajustes','Nomes, PIN, aparência, lembretes e backup']];
-  return head('Mais')+`<section class="grid g2">${items.map(([v,icn,t,d])=>`<button class="card more" data-act="go" data-v="${v}"><span class="q-ic">${ic(icn)}</span><span><strong>${t}</strong><span class="sub">${d}</span></span></button>`).join('')}</section>`;
+  return head('Mais')+`<section class="grid g2">${items.map(([v,icn,t,d])=>`<button class="card more" data-act="go" data-v="${v}"><span class="q-ic">${ic(icn)}</span><span><strong>${t}</strong><span class="sub">${d}</span></span></button>`).join('')}</section>
+  <div class="head"><span class="sub">Versão ${esc(APP_VERSION)}</span>${STANDALONE?`<button class="btn small" data-act="update">Buscar atualização</button>`:''}</div>`;
+}
+// baixa a versão mais nova ignorando o que o navegador guardou, e recarrega
+async function updateApp(){
+  toast('Buscando a versão mais nova.');
+  try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r) await r.update();
+    if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}
+    await Promise.all(['./','index.html'].map(u=>fetch(u,{cache:'reload'}).catch(()=>{})))}catch(e){}
+  location.reload();
 }
 function vLock(){
   return `<section class="lock"><div class="brand"><i></i>Conta a Dois</div><h1>Quem está usando?</h1>
@@ -1099,6 +1109,7 @@ document.addEventListener('click',ev=>{
   if(a==='sub'){ui[t.dataset.k]=t.dataset.v;render();return}
   if(a==='fab') return expDialog(null,ui.view==='individual'?S.me:'casal');
   if(a==='lock'){locked=true;render();window.scrollTo(0,0);return}
+  if(a==='update') return updateApp();
   if(a==='theme'){S.theme=isDark()?'claro':'escuro';save();render();return}
   if(a==='unlock') return switchTo(t.dataset.p);
   if(a==='set-pin') return setPinDialog();
