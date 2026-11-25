@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Conta a Dois</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#F3F3F0" media="(prefers-color-scheme: light)">
@@ -53,6 +53,7 @@ body[data-me="b"]{--accent:var(--pb)}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0}
+html{background:var(--bg)}
 body{background:color-mix(in srgb,var(--accent) 5%,var(--bg));color:var(--ink);font:400 16px/1.5 var(--font-b);font-variant-numeric:tabular-nums}
 h1,h2,h3{font-family:var(--font-d);margin:0;text-wrap:balance}
 h1{font-size:2rem;font-weight:600}
@@ -231,12 +232,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   .rail nav.links{display:none}
   .who{flex-direction:row;align-items:center;padding:0}
   .who small{display:none}
-  .tabbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;background:var(--surface);z-index:4;box-shadow:0 -1px 0 var(--line);padding-bottom:4px}
+  .tabbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;background:var(--surface);z-index:4;box-shadow:0 -1px 0 var(--line);padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
   .tabbar .nav-btn{flex-direction:column;gap:3px;font-size:.72rem;padding:10px 1px 6px;border-radius:0;justify-content:center;text-align:center;min-width:0;position:relative}
   .tabbar .nav-btn span{max-width:100%;white-space:nowrap}
   .tabbar .nav-btn[aria-current="page"]{background:none;color:var(--accent)}
   .tabbar .badge{position:absolute;top:4px;left:50%;margin:0 0 0 6px}
-  main{padding-top:8px;padding-bottom:104px}
+  main{padding-top:8px;padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
   .g3,.g2{grid-template-columns:minmax(0,1fr)}
   h1{font-size:1.7rem}
 }
@@ -259,7 +260,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .back svg{width:16px;height:16px}
 .more{flex-direction:row;align-items:center;gap:16px;border:0;cursor:pointer;text-align:left;font:inherit;color:inherit}
 .more strong{display:block}
-.who-head{display:flex;align-items:center;justify-content:space-between;min-height:32px}
+.who-head{display:flex;align-items:center;min-height:32px}
+.who-head small{margin-right:auto}
 .who-head .icon-btn{width:32px;height:32px}
 #who-seg span{white-space:nowrap}
 .fl{width:17px;height:17px;margin-right:6px;color:var(--pb-fill);flex:none}
@@ -284,7 +286,7 @@ body.locked .rail{display:none}
 body[data-me="b"]{background-image:var(--petals);background-size:340px 340px}
 body[data-me="b"] .hero{background:linear-gradient(115deg,var(--surface) 48%,color-mix(in srgb,var(--pb-fill) 24%,var(--surface)))}
 body[data-me="b"] .card,body[data-me="b"] .hero{border-radius:28px}
-@media (max-width:860px){.fab{right:18px;bottom:92px}}
+@media (max-width:860px){.fab{right:18px;bottom:calc(92px + env(safe-area-inset-bottom,0px))}}
 @media (max-width:860px){.who-head{order:2}}
 @media (max-width:520px){.hero-deco{width:32%;opacity:.7}}
 </style>
@@ -293,7 +295,7 @@ body[data-me="b"] .card,body[data-me="b"] .hero{border-radius:28px}
 <div class="app">
   <aside class="rail">
     <div class="brand"><i></i>Conta a Dois</div>
-    <div class="who"><div class="who-head"><small>Usando como</small><button class="icon-btn" id="lock-btn" data-act="lock" aria-label="Bloquear o app" title="Bloquear" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button></div><div class="seg" id="who-seg"></div></div>
+    <div class="who"><div class="who-head"><small>Usando como</small><button class="icon-btn" id="theme-btn" data-act="theme" hidden></button><button class="icon-btn" id="lock-btn" data-act="lock" aria-label="Bloquear o app" title="Bloquear" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button></div><div class="seg" id="who-seg"></div></div>
     <nav class="links" id="rail-nav" aria-label="Seções"></nav>
   </aside>
   <main id="main"></main>
@@ -361,6 +363,8 @@ const ICON={
   listas:'<path d="M10 6h10M10 12h10M10 18h10M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>',
   documentos:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
   ajustes:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+  moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>',
   mais:'<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>',
   lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
@@ -801,11 +805,13 @@ function applyTheme(){
   if(t==='auto') delete root.dataset.theme; else root.dataset.theme=t==='escuro'?'dark':'light';
   document.querySelectorAll('meta[name="theme-color"]').forEach((m,i)=>{m.content=t==='claro'?'#F3F3F0':t==='escuro'?'#0E0E0F':(i===0?'#F3F3F0':'#0E0E0F')});
 }
+const isDark=()=>{const t=S.theme||'claro';return t==='escuro'||(t==='auto'&&!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))};
 function render(){
   document.body.dataset.me=S.me;applyTheme();
   document.body.classList.toggle('locked',locked);
   if(locked){freeUrls();$('#main').innerHTML=vLock();return}
   $('#lock-btn').hidden=!(S.pins.a||S.pins.b);
+  {const tb=$('#theme-btn'),dark=isDark();tb.hidden=!STANDALONE;tb.innerHTML=ic(dark?'sun':'moon');tb.setAttribute('aria-label',dark?'Mudar para o modo claro':'Mudar para o modo escuro');tb.title=dark?'Modo claro':'Modo escuro'}
   const nAl=alerts().length,cur=MORE.includes(ui.view)?'mais':ui.view;
   const navHtml=short=>VIEWS.map(k=>{const l=k==='individual'?N(S.me):(short?SHORT[k]:LABEL[k]);return `<button class="nav-btn" data-act="go" data-v="${k}" ${cur===k?'aria-current="page"':''}>${ic(k)}<span>${esc(l)}</span>${k==='casal'&&nAl?`<em class="badge" aria-label="${nAl} lembretes">${nAl}</em>`:''}</button>`}).join('');
   $('#rail-nav').innerHTML=navHtml(false);$('#tabbar').innerHTML=navHtml(true);
@@ -1088,6 +1094,7 @@ document.addEventListener('click',ev=>{
   if(a==='sub'){ui[t.dataset.k]=t.dataset.v;render();return}
   if(a==='fab') return expDialog(null,ui.view==='individual'?S.me:'casal');
   if(a==='lock'){locked=true;render();window.scrollTo(0,0);return}
+  if(a==='theme'){S.theme=isDark()?'claro':'escuro';save();render();return}
   if(a==='unlock') return switchTo(t.dataset.p);
   if(a==='set-pin') return setPinDialog();
   if(a==='remove-pin') return removePinDialog();
