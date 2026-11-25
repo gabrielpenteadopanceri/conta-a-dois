@@ -415,13 +415,13 @@ function seed(){
   seedInventory(S0);
 }
 function fresh(withDemo){
-  S0={v:2,names:{a:'Pessoa 1',b:'Pessoa 2'},me:'a',defaultShareA:50,expenses:[],settlements:[],bills:[],budgets:{casal:{},a:{},b:{}},savings:[],docs:[],inventory:[],remindDays:5,
+  S0={v:2,names:{a:'Pessoa 1',b:'Pessoa 2'},me:'a',defaultShareA:50,expenses:[],settlements:[],bills:[],budgets:{casal:{},a:{},b:{}},savings:[],docs:[],inventory:[],remindDays:5,theme:'claro',
       lists:[{id:uid(),name:'Mercado',items:[]},{id:uid(),name:'Para a casa',items:[]}]};
   if(withDemo) seed();
   return S0;
 }
 function load(){
-  try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&s.v===2){if(!s.remindDays) s.remindDays=5;if(!s.inventory){s.inventory=[];if(s.docs.some(d=>d.demo)) seedInventory(s)}return s}}}catch(e){}
+  try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&s.v===2){if(!s.remindDays) s.remindDays=5;if(!s.theme) s.theme='claro';if(!s.inventory){s.inventory=[];if(s.docs.some(d=>d.demo)) seedInventory(s)}return s}}}catch(e){}
   return fresh(true);
 }
 let storageOK=true;
@@ -722,6 +722,7 @@ function vAjustes(){
   <section class="card"><h2>Divisão padrão das despesas do casal</h2>
     <input type="range" id="s-share" min="0" max="100" step="5" value="${S.defaultShareA}" aria-label="Parte da pessoa 1">
     <p class="sub" id="s-share-l">${shareLabel()}</p></section>
+  ${STANDALONE?`<section class="card"><h2>Aparência</h2>${seg('theme',[['claro','Claro'],['escuro','Escuro'],['auto','Seguir o aparelho']],S.theme||'claro')}</section>`:''}
   <section class="card"><h2>Lembretes</h2>
     <div class="field"><label class="label" for="s-remind">Avisar das contas fixas com quantos dias de antecedência</label><select id="s-remind" style="max-width:220px">${[3,5,7,10,15].map(n=>`<option value="${n}" ${S.remindDays===n?'selected':''}>${n} dias</option>`).join('')}</select></div>
     <p class="sub">Nesta versão os avisos aparecem na aba Casal e como um número no menu. A notificação no tablet e nos celulares depende do app instalado e entra na próxima etapa.</p></section>
@@ -733,8 +734,15 @@ function vAjustes(){
 }
 
 const RENDER={casal:vCasal,fechamento:vFechamento,individual:vIndividual,despesas:vDespesas,contas:vContas,listas:vListas,documentos:vDocumentos,ajustes:vAjustes};
+// no app instalado o tema é escolha de vocês (claro por padrão); dentro do Claude segue o tema do Claude
+function applyTheme(){
+  if(!STANDALONE) return;
+  const t=S.theme||'claro',root=document.documentElement;
+  if(t==='auto') delete root.dataset.theme; else root.dataset.theme=t==='escuro'?'dark':'light';
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m,i)=>{m.content=t==='claro'?'#F3F3F0':t==='escuro'?'#0E0E0F':(i===0?'#F3F3F0':'#0E0E0F')});
+}
 function render(){
-  document.body.dataset.me=S.me;
+  document.body.dataset.me=S.me;applyTheme();
   const nAl=alerts().length,cur=ui.view==='fechamento'?'casal':ui.view;
   const navHtml=short=>VIEWS.map(k=>{const l=k==='individual'?N(S.me):(short?SHORT[k]:LABEL[k]);return `<button class="nav-btn" data-act="go" data-v="${k}" ${cur===k?'aria-current="page"':''}>${ic(k)}<span>${esc(l)}</span>${k==='casal'&&nAl?`<em class="badge" aria-label="${nAl} lembretes">${nAl}</em>`:''}</button>`}).join('');
   $('#rail-nav').innerHTML=navHtml(false);$('#tabbar').innerHTML=navHtml(true);
@@ -957,6 +965,7 @@ function restoreBackup(file){
     if(!ok){toast('Esse arquivo não é um backup do Conta a Dois.');return}
     confirmDlg('Restaurar backup','Substituir todos os dados deste aparelho pelos do backup, com '+d.expenses.length+' despesas? Os dados atuais serão apagados.','Restaurar',()=>{
       if(!d.inventory) d.inventory=[];if(!d.remindDays) d.remindDays=5;if(!d.budgets) d.budgets={casal:{},a:{},b:{}};
+      if(!d.theme) d.theme=S.theme||'claro';
       S=d;
     });
   };
@@ -1034,6 +1043,7 @@ document.addEventListener('change',ev=>{
   if(el.id==='f-scope'){ui.scope=el.value;$('#exp-list').innerHTML=expRows()}
   if(el.id==='f-cat'){ui.cat=el.value;$('#exp-list').innerHTML=expRows()}
   if(el.id==='s-remind'){S.remindDays=Number(el.value);save();render()}
+  if(el.name==='theme'&&!el.closest('dialog')){S.theme=el.value;save();render()}
   if(el.id==='s-restore'&&el.files[0]){restoreBackup(el.files[0]);el.value=''}
   if(el.name==='who'&&el.closest('#who-seg')){S.me=el.value;save();render()}
   if(el.dataset.item){const i=curList().items.find(x=>x.id===el.dataset.item);if(i){i.done=el.checked;save();render()}}
