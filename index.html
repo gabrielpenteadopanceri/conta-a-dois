@@ -355,7 +355,7 @@ function installments(total,n){const base=Math.floor(total/n);return Array.from(
 
 /* ---------- estado ---------- */
 const KEY='contaadois.v2';
-const APP_VERSION='25/11 20:56';
+const APP_VERSION='25/11 20:58';
 const UA=navigator.userAgent||'';
 const IS_SAMSUNG=/SamsungBrowser/i.test(UA);
 const BROWSER=(()=>{let m=UA.match(/SamsungBrowser\/(\d+)/);if(m) return 'Internet da Samsung '+m[1];m=UA.match(/Chrome\/(\d+)/);if(m) return 'Chrome '+m[1];m=UA.match(/Version\/(\d+).*Safari/);if(m) return 'Safari '+m[1];return 'outro navegador'})();
@@ -800,8 +800,7 @@ function vAjustes(){
 function vMais(){
   const items=[['listas','listas','Listas','Mercado e compras para a casa'],['documentos','documentos','Documentos','Cofre de notas e contratos, e o inventário da casa'],['fechamento','check','Fechamento do mês','Resumo do mês e acerto entre vocês'],['ajustes','ajustes','Ajustes','Nomes, PIN, aparência, lembretes e backup']];
   return head('Mais')+`<section class="grid g2">${items.map(([v,icn,t,d])=>`<button class="card more" data-act="go" data-v="${v}"><span class="q-ic">${ic(icn)}</span><span><strong>${t}</strong><span class="sub">${d}</span></span></button>`).join('')}</section>
-  ${IS_SAMSUNG?`<section class="card"><h2>Cores escurecidas pelo navegador da Samsung</h2><p class="sub">Este app foi aberto pelo Internet da Samsung. Com o aparelho em modo escuro, esse navegador escurece as páginas por conta própria, e o app não consegue impedir. Para ver as cores certas, abra o Internet da Samsung, vá em Configurações, depois em Labs, e ative a opção de usar o tema escuro do próprio site ("Use website dark theme"). Outra saída é instalar o app pelo Chrome.</p></section>`:''}
-  <div class="head"><span class="sub">Versão ${esc(APP_VERSION)} · ${esc(BROWSER)}</span>${STANDALONE?`<button class="btn small" data-act="update">Buscar atualização</button>`:''}</div>`;
+  <div class="head"><span class="sub">Versão ${esc(APP_VERSION)}</span>${STANDALONE?`<button class="btn small" data-act="update">Buscar atualização</button>`:''}</div>`;
 }
 // baixa a versão mais nova ignorando o que o navegador guardou, e recarrega
 async function updateApp(){
