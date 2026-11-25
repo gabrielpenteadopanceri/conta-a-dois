@@ -231,8 +231,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   .rail nav.links{display:none}
   .who{flex-direction:row;align-items:center;padding:0}
   .who small{display:none}
-  .tabbar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;background:var(--surface);z-index:4;box-shadow:0 -1px 0 var(--line);padding-bottom:4px}
-  .tabbar .nav-btn{flex-direction:column;gap:3px;font-size:.64rem;padding:10px 1px 6px;border-radius:0;justify-content:center;text-align:center;min-width:0;position:relative}
+  .tabbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;background:var(--surface);z-index:4;box-shadow:0 -1px 0 var(--line);padding-bottom:4px}
+  .tabbar .nav-btn{flex-direction:column;gap:3px;font-size:.72rem;padding:10px 1px 6px;border-radius:0;justify-content:center;text-align:center;min-width:0;position:relative}
   .tabbar .nav-btn span{max-width:100%;white-space:nowrap}
   .tabbar .nav-btn[aria-current="page"]{background:none;color:var(--accent)}
   .tabbar .badge{position:absolute;top:4px;left:50%;margin:0 0 0 6px}
@@ -251,18 +251,55 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   .hero{padding:22px;border-radius:24px}
   .card{padding:18px}
 }
+
+/* botão fixo de nova despesa */
+.fab{position:fixed;right:28px;bottom:28px;width:62px;height:62px;border-radius:50%;border:0;background:var(--accent);color:var(--on-accent);box-shadow:0 10px 28px rgba(24,24,26,.22);cursor:pointer;display:grid;place-items:center;z-index:3}
+.fab svg{width:28px;height:28px;stroke-width:2.2}
+.back{align-self:flex-start;margin-bottom:-12px;padding-left:8px}
+.back svg{width:16px;height:16px}
+.more{flex-direction:row;align-items:center;gap:16px;border:0;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.more strong{display:block}
+.who-head{display:flex;align-items:center;justify-content:space-between;min-height:32px}
+.who-head .icon-btn{width:32px;height:32px}
+#who-seg span{white-space:nowrap}
+.fl{width:17px;height:17px;margin-right:6px;color:var(--pb-fill);flex:none}
+#who-seg input:checked+span .fl{color:var(--on-accent)}
+/* tela de entrada */
+.lock{display:flex;flex-direction:column;align-items:center;gap:26px;padding-top:8vh;text-align:center}
+.lock .grid{width:min(560px,100%)}
+.who-card{align-items:center;gap:10px;border:0;cursor:pointer;font:inherit;color:inherit;padding:30px 18px}
+.who-card strong{font:600 1.3rem var(--font-d)}
+.who-card .q-ic{width:72px;height:72px}
+.who-card .q-ic svg{width:34px;height:34px;margin:0}
+.who-card.a .q-ic{background:color-mix(in srgb,var(--pa) 11%,var(--surface));color:var(--pa)}
+.who-card.b .q-ic{background:color-mix(in srgb,var(--pb-fill) 22%,var(--surface));color:var(--pb-fill)}
+body.locked .who,body.locked .links,body.locked .tabbar,body.locked .fab{display:none}
+body.locked .app{grid-template-columns:minmax(0,1fr)}
+body.locked .rail{display:none}
+/* perfil rosa: flores */
+.hero{position:relative;overflow:hidden}
+.hero>*{position:relative}
+.hero-deco{position:absolute!important;right:-4px;top:-12px;width:min(200px,34%);pointer-events:none}
+.hero-deco svg{display:block;width:100%;height:auto}
+body[data-me="b"]{background-image:var(--petals);background-size:340px 340px}
+body[data-me="b"] .hero{background:linear-gradient(115deg,var(--surface) 48%,color-mix(in srgb,var(--pb-fill) 24%,var(--surface)))}
+body[data-me="b"] .card,body[data-me="b"] .hero{border-radius:28px}
+@media (max-width:860px){.fab{right:18px;bottom:92px}}
+@media (max-width:860px){.who-head{order:2}}
+@media (max-width:520px){.hero-deco{width:32%;opacity:.7}}
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="rail">
     <div class="brand"><i></i>Conta a Dois</div>
-    <div class="who"><small>Usando como</small><div class="seg" id="who-seg"></div></div>
+    <div class="who"><div class="who-head"><small>Usando como</small><button class="icon-btn" id="lock-btn" data-act="lock" aria-label="Bloquear o app" title="Bloquear" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button></div><div class="seg" id="who-seg"></div></div>
     <nav class="links" id="rail-nav" aria-label="Seções"></nav>
   </aside>
   <main id="main"></main>
 </div>
 <nav class="tabbar" id="tabbar" aria-label="Seções"></nav>
+<button class="fab" data-act="fab" aria-label="Nova despesa" title="Nova despesa"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
 <dialog id="dlg"></dialog>
 <div id="toast" role="status"></div>
 
@@ -324,6 +361,8 @@ const ICON={
   listas:'<path d="M10 6h10M10 12h10M10 18h10M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>',
   documentos:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
   ajustes:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+  mais:'<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>',
+  lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
   del:'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',
   prev:'<path d="M15 5l-7 7 7 7"/>', next:'<path d="M9 5l7 7-7 7"/>',
@@ -349,9 +388,10 @@ const CAT_IC={
 };
 const catIc=c=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${CAT_IC[c]||CAT_IC['Outros']}</svg>`;
 const ic=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
-const VIEWS=['casal','individual','despesas','contas','listas','documentos','ajustes'];
-const LABEL={casal:'Casal',despesas:'Lançamentos',contas:'Contas fixas',listas:'Listas',documentos:'Documentos',ajustes:'Ajustes'};
-const SHORT={casal:'Casal',despesas:'Gastos',contas:'Contas',listas:'Listas',documentos:'Docs',ajustes:'Ajustes'};
+const VIEWS=['casal','individual','despesas','contas','mais'];
+const MORE=['listas','documentos','ajustes','fechamento'];
+const LABEL={mais:'Mais',casal:'Casal',despesas:'Lançamentos',contas:'Contas fixas',listas:'Listas',documentos:'Documentos',ajustes:'Ajustes'};
+const SHORT={mais:'Mais',casal:'Casal',despesas:'Gastos',contas:'Contas',listas:'Listas',documentos:'Docs',ajustes:'Ajustes'};
 
 let S0;
 function plusDays(n){const t=new Date();t.setDate(t.getDate()+n);return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate())}
@@ -415,18 +455,19 @@ function seed(){
   seedInventory(S0);
 }
 function fresh(withDemo){
-  S0={v:2,names:{a:'Pessoa 1',b:'Pessoa 2'},me:'a',defaultShareA:50,expenses:[],settlements:[],bills:[],budgets:{casal:{},a:{},b:{}},savings:[],docs:[],inventory:[],remindDays:5,theme:'claro',
+  S0={v:2,names:{a:'Pessoa 1',b:'Pessoa 2'},me:'a',defaultShareA:50,expenses:[],settlements:[],bills:[],budgets:{casal:{},a:{},b:{}},savings:[],docs:[],inventory:[],remindDays:5,theme:'claro',pins:{a:null,b:null},
       lists:[{id:uid(),name:'Mercado',items:[]},{id:uid(),name:'Para a casa',items:[]}]};
   if(withDemo) seed();
   return S0;
 }
 function load(){
-  try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&s.v===2){if(!s.remindDays) s.remindDays=5;if(!s.theme) s.theme='claro';if(!s.inventory){s.inventory=[];if(s.docs.some(d=>d.demo)) seedInventory(s)}return s}}}catch(e){}
+  try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&s.v===2){if(!s.remindDays) s.remindDays=5;if(!s.theme) s.theme='claro';if(!s.pins) s.pins={a:null,b:null};if(!s.inventory){s.inventory=[];if(s.docs.some(d=>d.demo)) seedInventory(s)}return s}}}catch(e){}
   return fresh(true);
 }
 let storageOK=true;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){storageOK=false}}
 let S=load();
+let locked=!!(S.pins.a||S.pins.b); // com PIN criado, o app abre na tela de escolha de perfil
 const ui={view:'casal',ym:curYM(),q:'',scope:'todas',cat:'',folder:'',dq:'',list:'',docTab:'cofre',subC:'geral',subI:'geral'};
 const N=p=>S.names[p]||(p==='a'?'Pessoa 1':'Pessoa 2');
 const hasDemo=()=>['expenses','settlements','bills','savings','docs','inventory'].some(k=>S[k].some(x=>x.demo))||S.lists.some(l=>l.items.some(x=>x.demo));
@@ -450,14 +491,21 @@ function freeUrls(){urls.forEach(u=>URL.revokeObjectURL(u));urls=[]}
 /* ---------- peças de tela ---------- */
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('on'),2600)}
 function monthNav(){return `<div class="month"><button class="icon-btn" data-act="month" data-n="-1" aria-label="Mês anterior">${ic('prev')}</button><b>${esc(monthLabel(ui.ym))}</b><button class="icon-btn" data-act="month" data-n="1" aria-label="Próximo mês">${ic('next')}</button></div>`}
-function head(title,right=''){return `<div class="head"><h1>${esc(title)}</h1><div class="toolbar">${right}</div></div>`}
-function demoBanner(){return hasDemo()?`<div class="banner"><span><strong>Dados de exemplo</strong> para mostrar as telas.</span><button class="btn small" data-act="clear-demo">Apagar exemplos</button></div>`:''}
+function head(title,right=''){const back=['listas','documentos','ajustes'].includes(ui.view)?`<button class="btn small ghost back" data-act="go" data-v="mais">${ic('prev')}Mais</button>`:'';return `${back}<div class="head"><h1>${esc(title)}</h1><div class="toolbar">${right}</div></div>`}
+function demoBanner(){return hasDemo()&&ui.view==='casal'?`<div class="banner"><span><strong>Dados de exemplo</strong> para mostrar as telas.</span><button class="btn small" data-act="clear-demo">Apagar exemplos</button></div>`:''}
 function splitBar(e){if(e.scope!=='casal') return `<div class="split" title="Só de ${esc(N(e.scope))}"><i style="width:${e.scope==='a'?100:0}%"></i><b></b></div>`;return `<div class="split" title="${esc(N('a'))} ${e.shareA}% · ${esc(N('b'))} ${100-e.shareA}%"><i style="width:${e.shareA}%"></i><b></b></div>`}
 function expRow(e){
   const who=e.scope==='casal'?`casal ${e.shareA}/${100-e.shareA}`:`só de ${N(e.scope)}`;
   return `<li class="row x tap" data-act="edit-exp" data-id="${e.id}" tabindex="0" role="button"><span class="cat-ic">${catIc(e.cat)}</span><div><strong>${esc(e.desc)}</strong><span class="sub">${esc(N(e.payer))} pagou · ${esc(who)}${e.demo?' · exemplo':''}</span></div>
   <div class="amt-col"><span class="amt">${brl(e.amount)}</span>${splitBar(e)}</div>${e.docId?`<button class="icon-btn" data-act="view-doc" data-id="${e.docId}" aria-label="Ver comprovante">${ic('clip')}</button>`:'<span></span>'}</li>`;
 }
+// flores do perfil rosa: desenho próprio, cinco pétalas e miolo
+function blossom(x,y,s,rot,fill,center='#F4C04E'){let p='';for(let k=0;k<5;k++) p+=`<ellipse cx="0" cy="-13" rx="8.5" ry="13" transform="rotate(${k*72})"/>`;return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})"><g fill="${fill}">${p}</g><circle r="5.5" fill="${center}"/></g>`}
+const leaf=(x,y,r,s=1)=>`<ellipse cx="${x}" cy="${y}" rx="${7*s}" ry="${17*s}" transform="rotate(${r} ${x} ${y})" fill="#8FC39B"/>`;
+const FLOWERS=`<svg viewBox="0 0 280 210" xmlns="http://www.w3.org/2000/svg">${leaf(160,128,42,1.25)}${leaf(222,160,-32,1.1)}${leaf(128,62,72)}${leaf(250,70,-52,1.1)}${blossom(202,76,2.2,10,'#F28DBD')}${blossom(128,118,1.5,40,'#F7B6D4')}${blossom(240,152,1.45,-15,'#E66AA6')}${blossom(150,36,1,20,'#E66AA6')}${blossom(84,160,.9,0,'#F28DBD')}${blossom(262,28,.8,30,'#F7B6D4')}</svg>`;
+const FLOWER_ICON=`<svg class="fl" viewBox="-24 -24 48 48" aria-hidden="true">${blossom(0,0,1.4,0,'currentColor')}</svg>`;
+const heroDeco=()=>S.me==='b'?`<div class="hero-deco" aria-hidden="true">${FLOWERS}</div>`:'';
+try{document.documentElement.style.setProperty('--petals','url("data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="340" height="340" opacity=".34">${blossom(60,70,.75,12,'#F7B6D4','#F9DC9A')}${blossom(250,40,.5,40,'#F7B6D4','#F9DC9A')}${blossom(180,190,.62,-20,'#F7B6D4','#F9DC9A')}${blossom(40,270,.5,5,'#F7B6D4','#F9DC9A')}${blossom(300,290,.7,30,'#F7B6D4','#F9DC9A')}</svg>`)+'")')}catch(e){}
 const subTabs=(k,opts)=>`<div class="tabs">${opts.map(([v,l])=>`<button class="tab" data-act="sub" data-k="${k}" data-v="${v}" aria-selected="${ui[k]===v}">${l}</button>`).join('')}</div>`;
 const quick=items=>`<div class="quick">${items.map(([act,attrs,icn,l])=>`<button class="q" data-act="${act}" ${attrs}><span class="q-ic">${ic(icn)}</span><span>${l}</span></button>`).join('')}</div>`;
 function catRow(x){
@@ -512,38 +560,40 @@ function alerts(){
 /* ---------- telas ---------- */
 function vCasal(){
   const casal=monthExp(ui.ym).filter(e=>e.scope==='casal');
-  const top=head('Casal',monthNav())+demoBanner()+subTabs('subC',[['geral','Visão geral'],['orc','Orçamento'],['res','Reservas']]);
-  if(ui.subC==='orc') return top+catCard('casal',casal,'Orçamento do casal');
+  const top=head('Casal',monthNav())+subTabs('subC',[['geral','Visão geral'],['orc','Análise'],['res','Reservas']]);
   if(ui.subC==='res') return top+savSection('casal','Reservas do casal');
+  if(ui.subC==='orc'){
+    const months=[];for(let i=5;i>=0;i--) months.push(addMonths(ui.ym,-i));
+    const series=months.map(m=>{const c=monthExp(m).filter(e=>e.scope==='casal');return {m,a:sum(c,e=>shareOf(e,'a')),b:sum(c,e=>shareOf(e,'b'))}});
+    const max=Math.max(1,...series.map(s=>s.a+s.b));
+    const bars=series.map(s=>{const t=s.a+s.b;return `<div class="col"><small>${t?brl(t).replace(/,\d\d$/,''):''}</small><div class="stack"><span class="sb" style="height:${Math.round(s.b/max*190)}px"></span><span class="sa" style="height:${Math.round(s.a/max*190)}px"></span></div></div>`}).join('');
+    return top+`<section class="grid g2">
+      <div class="card"><h2>Gasto do casal, últimos 6 meses</h2>
+        <div class="legend"><span><i class="dot a"></i>${esc(N('a'))}</span><span><i class="dot b"></i>${esc(N('b'))}</span></div>
+        <div class="bars" style="height:240px">${bars}</div><div class="bar-labels">${months.map(m=>`<span>${esc(monthLabel(m,true))}</span>`).join('')}</div></div>
+      ${catCard('casal',casal,'Orçamento do casal')}
+    </section>`;
+  }
   const tot=sum(casal,e=>e.amount),pa=sum(casal,e=>shareOf(e,'a')),pb=tot-pa;
   const bal=balanceOf(S.expenses,S.settlements),bt=balText(bal);
-  const months=[];for(let i=5;i>=0;i--) months.push(addMonths(ui.ym,-i));
-  const series=months.map(m=>{const c=monthExp(m).filter(e=>e.scope==='casal');return {m,a:sum(c,e=>shareOf(e,'a')),b:sum(c,e=>shareOf(e,'b'))}});
-  const max=Math.max(1,...series.map(s=>s.a+s.b));
-  const bars=series.map(s=>{const t=s.a+s.b;return `<div class="col"><small>${t?brl(t).replace(/,\d\d$/,''):''}</small><div class="stack"><span class="sb" style="height:${Math.round(s.b/max*190)}px"></span><span class="sa" style="height:${Math.round(s.a/max*190)}px"></span></div></div>`}).join('');
   const al=alerts();
-  const alHtml=al.map(x=>`<li class="row x"><span class="cat-ic">${ic('bell')}</span><div><strong>${esc(x.title)}</strong><span class="sub">${esc(x.sub)}</span></div><span class="pill ${x.k}">${esc(x.t)}</span><span></span></li>`).join('');
+  const alHtml=al.map(x=>`<li class="row x"><span class="cat-ic">${ic('bell')}</span><div><strong>${esc(x.title)}</strong><span class="sub">${esc(x.sub)}</span><span class="pill ${x.k}">${esc(x.t)}</span></div><span></span><span></span></li>`).join('')||'<li class="empty">Nenhum lembrete para os próximos dias.</li>';
   const recent=casal.slice().sort((x,y)=>x.date<y.date?1:-1).slice(0,5).map(expRow).join('')||'<li class="empty">Nenhuma despesa do casal neste mês.</li>';
-  return top+`
-  <section class="hero">
+  return top+demoBanner()+`
+  <section class="hero">${heroDeco()}
     <span class="hero-label">Gasto do casal em ${esc(monthLabel(ui.ym))}</span>
     <div class="hero-num">${brl(tot)}</div>
     <div class="split"><i style="width:${tot?pa/tot*100:50}%"></i><b></b></div>
     <div class="hero-legend"><span><i class="dot a"></i>${esc(N('a'))} <b>${brl(pa)}</b></span><span><i class="dot b"></i>${esc(N('b'))} <b>${brl(pb)}</b></span></div>
     <div class="hero-foot"><span>${bt.html}</span>${bal?`<button class="btn small light" data-act="settle">Registrar acerto</button>`:''}</div>
   </section>
-  ${quick([['new-exp','data-scope="casal"','plus','Nova despesa'],['settle','','swap','Acerto'],['go','data-v="fechamento"','check','Fechamento do mês'],['go','data-v="listas"','listas','Listas']])}
-  ${al.length?`<section class="card"><h2>Lembretes</h2><ul class="list">${alHtml}</ul></section>`:''}
   <section class="grid g2">
     <div class="card"><div class="head"><h2>Últimas despesas</h2><button class="btn small ghost" data-act="go" data-v="despesas">Ver todas</button></div><ul class="list">${recent}</ul></div>
-    <div class="card"><h2>Últimos 6 meses</h2>
-      <div class="legend"><span><i class="dot a"></i>${esc(N('a'))}</span><span><i class="dot b"></i>${esc(N('b'))}</span></div>
-      <div class="bars" style="height:240px">${bars}</div><div class="bar-labels">${months.map(m=>`<span>${esc(monthLabel(m,true))}</span>`).join('')}</div>
-    </div>
+    <div class="card"><h2>Lembretes</h2><ul class="list">${alHtml}</ul></div>
   </section>`;
 }
 
-function vFechamento(){
+function vFechamento(){ // aberto pela aba Casal ou pela tela Mais
   const ym=ui.ym,me=S.me,ex=monthExp(ym),casal=ex.filter(e=>e.scope==='casal');
   const pm=addMonths(ym,-1),ptot=sum(monthExp(pm).filter(e=>e.scope==='casal'),e=>e.amount);
   const tot=sum(casal,e=>e.amount);
@@ -561,7 +611,7 @@ function vFechamento(){
   const ind=sum(ex.filter(e=>e.scope===me),e=>e.amount),myPart=sum(casal,e=>shareOf(e,me));
   const perHtml=per.map(x=>`<span><i class="dot ${x.p}"></i><strong>${esc(N(x.p))}</strong> pagou</span><b>${brl(x.paid)}</b><span class="sub">Parte que cabia</span><b>${brl(x.share)}</b><span class="sub">${x.diff>=0?'Pagou a mais':'Pagou a menos'}</span><b>${brl(Math.abs(x.diff))}</b>`).join('<span class="sep"></span>');
   const vs=delta===null?'Sem despesas do casal em '+monthLabel(pm)+' para comparar.':delta===0?'Igual a '+monthLabel(pm)+'.':Math.abs(delta)+'% '+(delta>0?'acima':'abaixo')+' de '+monthLabel(pm)+' ('+brl(ptot)+').';
-  return head('Fechamento do mês',monthNav()+`<button class="btn" data-act="go" data-v="casal">Voltar para Casal</button>`)+demoBanner()+`
+  return head('Fechamento do mês',monthNav()+`<button class="btn" data-act="go" data-v="mais">Voltar</button>`)+`
   <section class="card balance ${bt.cls}">
     <div><div class="label">Acerto de ${esc(monthLabel(ym))}, já descontados os acertos do mês</div><div class="big">${mbal?bt.html:'Mês fechado sem diferença'}</div>
     <div class="sub">Saldo acumulado de todos os meses: ${acc?at.html:'vocês estão quites'}.</div></div>
@@ -593,7 +643,7 @@ function vFechamento(){
 function vIndividual(){
   const me=S.me,o=other(me),ex=monthExp(ui.ym);
   const mine=ex.filter(e=>e.scope===me);
-  const top=head('Espaço de '+N(me),monthNav())+demoBanner()+subTabs('subI',[['geral','Visão geral'],['orc','Orçamento'],['res','Reservas']]);
+  const top=head('Espaço de '+N(me),monthNav())+subTabs('subI',[['geral','Visão geral'],['orc','Orçamento'],['res','Reservas']]);
   if(ui.subI==='orc') return top+catCard(me,mine,'Seu orçamento individual');
   if(ui.subI==='res') return top+savSection(me,'Suas reservas');
   const part=sum(ex.filter(e=>e.scope==='casal'),e=>shareOf(e,me)),ind=sum(mine,e=>e.amount);
@@ -601,13 +651,12 @@ function vIndividual(){
   const balLine=!myBal?'Você e '+esc(N(o))+' estão quites':myBal>0?`<span class="p${o}">${esc(N(o))}</span> te deve ${brl(myBal)}`:`Você deve ${brl(-myBal)} a <span class="p${o}">${esc(N(o))}</span>`;
   const rows=mine.slice().sort((x,y)=>x.date<y.date?1:-1).map(expRow).join('')||'<li class="empty">Nenhum gasto individual neste mês.</li>';
   return top+`
-  <section class="hero">
+  <section class="hero">${heroDeco()}
     <span class="hero-label">Seu custo em ${esc(monthLabel(ui.ym))}</span>
     <div class="hero-num">${brl(part+ind)}</div>
     <div class="hero-legend"><span>Sua parte no casal <b>${brl(part)}</b></span><span>Gastos individuais <b>${brl(ind)}</b></span></div>
     <div class="hero-foot"><span>${balLine}</span>${myBal?`<button class="btn small light" data-act="settle">Registrar acerto</button>`:''}</div>
   </section>
-  ${quick([['new-exp',`data-scope="${me}"`,'plus','Despesa individual'],['new-sav',`data-owner="${me}"`,'piggy','Nova reserva'],['sub','data-k="subI" data-v="orc"','despesas','Meu orçamento'],['go','data-v="fechamento"','check','Fechamento do mês']])}
   <section class="card"><h2>Seus gastos individuais no mês</h2><ul class="list">${rows}</ul></section>
   <p class="sub">Só você vê esta aba. Quando o login estiver ligado, ${esc(N(o))} terá a dela e uma não aparece para o outro.</p>`;
 }
@@ -722,6 +771,9 @@ function vAjustes(){
   <section class="card"><h2>Divisão padrão das despesas do casal</h2>
     <input type="range" id="s-share" min="0" max="100" step="5" value="${S.defaultShareA}" aria-label="Parte da pessoa 1">
     <p class="sub" id="s-share-l">${shareLabel()}</p></section>
+  <section class="card"><h2>PIN de cada um</h2>
+    <p class="sub">Com PIN, o app abre perguntando quem está usando, e trocar de perfil pede o PIN da pessoa. Cada um cria o próprio. É uma barreira de uso no aparelho: os dados continuam guardados nele sem criptografia.</p>
+    <ul class="list">${['a','b'].map(p=>`<li class="row"><div><strong>${esc(N(p))}</strong><span class="sub">${S.pins[p]?'PIN criado':'Sem PIN'}</span></div><span class="acts" style="gap:8px;flex-wrap:wrap;justify-content:flex-end">${p===S.me?(S.pins[p]?`<button class="btn small" data-act="set-pin">Trocar PIN</button><button class="btn small ghost" data-act="remove-pin">Remover</button>`:`<button class="btn small primary" data-act="set-pin">Criar PIN</button>`):`<span class="sub">Só ${esc(N(p))} altera</span>`}</span></li>`).join('')}</ul></section>
   ${STANDALONE?`<section class="card"><h2>Aparência</h2>${seg('theme',[['claro','Claro'],['escuro','Escuro'],['auto','Seguir o aparelho']],S.theme||'claro')}</section>`:''}
   <section class="card"><h2>Lembretes</h2>
     <div class="field"><label class="label" for="s-remind">Avisar das contas fixas com quantos dias de antecedência</label><select id="s-remind" style="max-width:220px">${[3,5,7,10,15].map(n=>`<option value="${n}" ${S.remindDays===n?'selected':''}>${n} dias</option>`).join('')}</select></div>
@@ -733,7 +785,15 @@ function vAjustes(){
     <div class="toolbar">${hasDemo()?`<button class="btn" data-act="clear-demo">Apagar exemplos</button>`:''}<button class="btn danger" data-act="reset">Apagar tudo</button></div></section>`;
 }
 
-const RENDER={casal:vCasal,fechamento:vFechamento,individual:vIndividual,despesas:vDespesas,contas:vContas,listas:vListas,documentos:vDocumentos,ajustes:vAjustes};
+function vMais(){
+  const items=[['listas','listas','Listas','Mercado e compras para a casa'],['documentos','documentos','Documentos','Cofre de notas e contratos, e o inventário da casa'],['fechamento','check','Fechamento do mês','Resumo do mês e acerto entre vocês'],['ajustes','ajustes','Ajustes','Nomes, PIN, aparência, lembretes e backup']];
+  return head('Mais')+`<section class="grid g2">${items.map(([v,icn,t,d])=>`<button class="card more" data-act="go" data-v="${v}"><span class="q-ic">${ic(icn)}</span><span><strong>${t}</strong><span class="sub">${d}</span></span></button>`).join('')}</section>`;
+}
+function vLock(){
+  return `<section class="lock"><div class="brand"><i></i>Conta a Dois</div><h1>Quem está usando?</h1>
+  <div class="grid g2">${['a','b'].map(p=>`<button class="card who-card ${p}" data-act="unlock" data-p="${p}"><span class="q-ic">${p==='b'?FLOWER_ICON:ic('individual')}</span><strong>${esc(N(p))}</strong><span class="sub">${S.pins[p]?'Entrar com PIN':'Sem PIN'}</span></button>`).join('')}</div></section>`;
+}
+const RENDER={mais:vMais,casal:vCasal,fechamento:vFechamento,individual:vIndividual,despesas:vDespesas,contas:vContas,listas:vListas,documentos:vDocumentos,ajustes:vAjustes};
 // no app instalado o tema é escolha de vocês (claro por padrão); dentro do Claude segue o tema do Claude
 function applyTheme(){
   if(!STANDALONE) return;
@@ -743,10 +803,13 @@ function applyTheme(){
 }
 function render(){
   document.body.dataset.me=S.me;applyTheme();
-  const nAl=alerts().length,cur=ui.view==='fechamento'?'casal':ui.view;
+  document.body.classList.toggle('locked',locked);
+  if(locked){freeUrls();$('#main').innerHTML=vLock();return}
+  $('#lock-btn').hidden=!(S.pins.a||S.pins.b);
+  const nAl=alerts().length,cur=MORE.includes(ui.view)?'mais':ui.view;
   const navHtml=short=>VIEWS.map(k=>{const l=k==='individual'?N(S.me):(short?SHORT[k]:LABEL[k]);return `<button class="nav-btn" data-act="go" data-v="${k}" ${cur===k?'aria-current="page"':''}>${ic(k)}<span>${esc(l)}</span>${k==='casal'&&nAl?`<em class="badge" aria-label="${nAl} lembretes">${nAl}</em>`:''}</button>`}).join('');
   $('#rail-nav').innerHTML=navHtml(false);$('#tabbar').innerHTML=navHtml(true);
-  $('#who-seg').innerHTML=['a','b'].map(p=>`<label><input type="radio" name="who" value="${p}" ${S.me===p?'checked':''}><span><i class="dot ${p}"></i>${esc(N(p))}</span></label>`).join('');
+  $('#who-seg').innerHTML=['a','b'].map(p=>`<label><input type="radio" name="who" value="${p}" ${S.me===p?'checked':''}><span>${p==='b'?FLOWER_ICON:'<i class="dot a"></i>'}${esc(N(p))}</span></label>`).join('');
   freeUrls();
   $('#main').innerHTML=RENDER[ui.view]();
   if(ui.view==='despesas'){$('#f-scope').value=ui.scope;$('#f-cat').value=ui.cat}
@@ -910,6 +973,41 @@ function moveDialog(g){
     if(out&&amount>savedOf(g)) return 'A retirada passa do que está guardado ('+brl(savedOf(g))+').';
     g.moves.push({date:todayISO(),amount:out?-amount:amount,by:g.owner==='casal'?fd.get('by'):g.owner});return null});
 }
+// O PIN é uma barreira de uso no aparelho, não criptografia: guarda-se só o resumo (hash) dele.
+async function pinHash(salt,pin){
+  try{const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+pin));return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+  catch(e){let x=5381;for(const c of salt+':'+pin) x=((x<<5)+x+c.charCodeAt(0))|0;return 'x'+x}
+}
+async function pinOk(p,pin){const r=S.pins[p];return !!r&&await pinHash(r.salt,pin)===r.hash}
+const validPin=v=>/^\d{4,6}$/.test(v);
+const pinField=(id,name,label)=>`<div class="field"><label class="label" for="${id}">${label}</label><input type="password" inputmode="numeric" autocomplete="off" id="${id}" name="${name}" maxlength="6"></div>`;
+function enterAs(p){S.me=p;locked=false;ui.subI='geral'}
+function askPin(p,then){
+  openDlg('PIN de '+N(p),pinField('pin-in','pin','Digite o PIN para entrar')+`<div><button type="button" class="btn small ghost del" data-act="forgot-pin" data-p="${p}">Esqueci o PIN</button></div>`,
+  'Entrar',async fd=>{if(!await pinOk(p,String(fd.get('pin')))) return 'PIN incorreto. Tente de novo.';then();return null});
+  setTimeout(()=>{const i=$('#pin-in');if(i) i.focus()},60);
+}
+function switchTo(p){if(S.pins[p]) askPin(p,()=>enterAs(p));else{enterAs(p);save();render()}}
+function setPinDialog(){
+  const me=S.me,has=!!S.pins[me];
+  openDlg(has?'Trocar PIN':'Criar PIN',(has?pinField('pin-cur','cur','PIN atual'):'')+pinField('pin-new','pin','Novo PIN, de 4 a 6 números')+pinField('pin-rep','rep','Repita o novo PIN'),
+  'Salvar PIN',async fd=>{
+    if(has&&!await pinOk(me,String(fd.get('cur')))) return 'O PIN atual não confere.';
+    const pin=String(fd.get('pin'));
+    if(!validPin(pin)) return 'Use de 4 a 6 números.';
+    if(pin!==String(fd.get('rep'))) return 'Os dois PINs digitados são diferentes.';
+    const salt=uid();S.pins[me]={salt,hash:await pinHash(salt,pin)};return null});
+}
+function removePinDialog(){
+  const me=S.me;
+  openDlg('Remover PIN',pinField('pin-cur','cur','Digite o PIN atual para remover'),'Remover PIN',async fd=>{if(!await pinOk(me,String(fd.get('cur')))) return 'O PIN não confere.';S.pins[me]=null;return null},true);
+}
+function forgotPin(p){
+  const o=other(p);
+  if(S.pins[o]) openDlg('Redefinir o PIN de '+N(p),`<p>Para remover o PIN de ${esc(N(p))}, ${esc(N(o))} precisa confirmar com o próprio PIN.</p>`+pinField('pin-oth','pin','PIN de '+esc(N(o))),'Remover PIN de '+N(p),
+    async fd=>{if(!await pinOk(o,String(fd.get('pin')))) return 'O PIN de '+N(o)+' não confere.';S.pins[p]=null;locked=!!(S.pins.a||S.pins.b)&&locked;return null},true);
+  else confirmDlg('Redefinir o PIN de '+N(p),N(o)+' não tem PIN para confirmar, então qualquer pessoa com o aparelho em mãos consegue fazer isto. Remover o PIN de '+N(p)+'?','Remover PIN',()=>{S.pins[p]=null});
+}
 function listDialog(){
   openDlg('Nova lista',`<div class="field"><label class="label" for="l-name">Nome da lista</label><input type="text" id="l-name" name="name" maxlength="40" placeholder="Ex.: farmácia"></div>`,
   'Criar lista',fd=>{const name=String(fd.get('name')).trim();if(!name) return 'Dê um nome para a lista.';const l={id:uid(),name,items:[]};S.lists.push(l);ui.list=l.id;return null});
@@ -965,7 +1063,7 @@ function restoreBackup(file){
     if(!ok){toast('Esse arquivo não é um backup do Conta a Dois.');return}
     confirmDlg('Restaurar backup','Substituir todos os dados deste aparelho pelos do backup, com '+d.expenses.length+' despesas? Os dados atuais serão apagados.','Restaurar',()=>{
       if(!d.inventory) d.inventory=[];if(!d.remindDays) d.remindDays=5;if(!d.budgets) d.budgets={casal:{},a:{},b:{}};
-      if(!d.theme) d.theme=S.theme||'claro';
+      if(!d.theme) d.theme=S.theme||'claro';if(!d.pins) d.pins={a:null,b:null};
       S=d;
     });
   };
@@ -988,6 +1086,12 @@ document.addEventListener('click',ev=>{
   if(a==='go'){ui.view=t.dataset.v;try{location.hash=ui.view}catch(e){}render();window.scrollTo(0,0);return}
   if(a==='month'){ui.ym=addMonths(ui.ym,Number(t.dataset.n));render();return}
   if(a==='sub'){ui[t.dataset.k]=t.dataset.v;render();return}
+  if(a==='fab') return expDialog(null,ui.view==='individual'?S.me:'casal');
+  if(a==='lock'){locked=true;render();window.scrollTo(0,0);return}
+  if(a==='unlock') return switchTo(t.dataset.p);
+  if(a==='set-pin') return setPinDialog();
+  if(a==='remove-pin') return removePinDialog();
+  if(a==='forgot-pin') return forgotPin(t.dataset.p);
   if(a==='new-exp') return expDialog(null,t.dataset.scope);
   if(a==='edit-exp') return expDialog(find('expenses',id));
   if(a==='del-exp'){const e=find('expenses',id);return confirmDlg('Excluir despesa','Excluir "'+e.desc+'" de '+brl(e.amount)+'? O saldo entre vocês é recalculado.'+(e.group?' As outras parcelas continuam lançadas.':''),'Excluir',()=>removeFrom('expenses',id))}
@@ -1019,7 +1123,7 @@ document.addEventListener('click',ev=>{
   if(a==='csv') return exportCsv();
   if(a==='backup') return exportBackup();
   if(a==='clear-demo') return confirmDlg('Apagar exemplos','Apagar todos os itens de exemplo? O que vocês mesmos lançaram fica.','Apagar exemplos',()=>{['expenses','settlements','bills','savings','docs','inventory'].forEach(k=>S[k]=S[k].filter(x=>!x.demo));S.inventory.forEach(i=>{if(i.docId&&!S.docs.some(d=>d.id===i.docId)) i.docId=''});S.lists.forEach(l=>l.items=l.items.filter(i=>!i.demo));S.budgets={casal:{},a:{},b:{}}});
-  if(a==='reset') return confirmDlg('Apagar tudo','Apagar todos os dados deste navegador, inclusive os documentos? Não dá para desfazer.','Apagar tudo',()=>{S.docs.forEach(d=>d.hasFile&&fileDel(d.id));const names=S.names,me=S.me;S=fresh(false);S.names=names;S.me=me});
+  if(a==='reset') return confirmDlg('Apagar tudo','Apagar todos os dados deste navegador, inclusive os documentos? Não dá para desfazer.','Apagar tudo',()=>{S.docs.forEach(d=>d.hasFile&&fileDel(d.id));const names=S.names,me=S.me,theme=S.theme;S=fresh(false);S.names=names;S.me=me;S.theme=theme});
 });
 document.addEventListener('keydown',ev=>{
   if((ev.key==='Enter'||ev.key===' ')&&ev.target.classList&&ev.target.classList.contains('tap')){ev.preventDefault();ev.target.click()}
@@ -1045,7 +1149,7 @@ document.addEventListener('change',ev=>{
   if(el.id==='s-remind'){S.remindDays=Number(el.value);save();render()}
   if(el.name==='theme'&&!el.closest('dialog')){S.theme=el.value;save();render()}
   if(el.id==='s-restore'&&el.files[0]){restoreBackup(el.files[0]);el.value=''}
-  if(el.name==='who'&&el.closest('#who-seg')){S.me=el.value;save();render()}
+  if(el.name==='who'&&el.closest('#who-seg')){const p=el.value;if(p!==S.me){if(S.pins[p]){render();askPin(p,()=>enterAs(p))}else{enterAs(p);save();render()}}}
   if(el.dataset.item){const i=curList().items.find(x=>x.id===el.dataset.item);if(i){i.done=el.checked;save();render()}}
   if(el.id==='s-na'||el.id==='s-nb'){const v=el.value.trim();if(v){S.names[el.id==='s-na'?'a':'b']=v;save();render()}}
 });
