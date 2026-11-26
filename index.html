@@ -355,7 +355,7 @@ function installments(total,n){const base=Math.floor(total/n);return Array.from(
 
 /* ---------- estado ---------- */
 const KEY='contaadois.v2';
-const APP_VERSION='25/11 20:58';
+const APP_VERSION='25/11 21:08';
 const UA=navigator.userAgent||'';
 const IS_SAMSUNG=/SamsungBrowser/i.test(UA);
 const BROWSER=(()=>{let m=UA.match(/SamsungBrowser\/(\d+)/);if(m) return 'Internet da Samsung '+m[1];m=UA.match(/Chrome\/(\d+)/);if(m) return 'Chrome '+m[1];m=UA.match(/Version\/(\d+).*Safari/);if(m) return 'Safari '+m[1];return 'outro navegador'})();
@@ -468,16 +468,16 @@ function seed(){
 }
 function fresh(withDemo){
   S0={v:2,names:{a:'Pessoa 1',b:'Pessoa 2'},me:'a',defaultShareA:50,expenses:[],settlements:[],bills:[],budgets:{casal:{},a:{},b:{}},savings:[],docs:[],inventory:[],remindDays:5,theme:'claro',pins:{a:null,b:null},
-      lists:[{id:uid(),name:'Mercado',items:[]},{id:uid(),name:'Para a casa',items:[]}]};
+      lists:[{id:'l-mercado',name:'Mercado',items:[]},{id:'l-casa',name:'Para a casa',items:[]}]};
   if(withDemo) seed();
   return S0;
 }
 function load(){
-  try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&s.v===2){if(!s.remindDays) s.remindDays=5;if(!s.theme) s.theme='claro';if(!s.pins) s.pins={a:null,b:null};if(!s.inventory){s.inventory=[];if(s.docs.some(d=>d.demo)) seedInventory(s)}return s}}}catch(e){}
+  try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&s.v===2){if(!s.remindDays) s.remindDays=5;if(!s.theme) s.theme='claro';if(!s.pins) s.pins={a:null,b:null};{const fix={'Mercado':'l-mercado','Para a casa':'l-casa'};for(const l of s.lists){const f=fix[l.name];if(f&&l.id!==f&&!s.lists.some(x=>x.id===f)) l.id=f}}if(!s.inventory){s.inventory=[];if(s.docs.some(d=>d.demo)) seedInventory(s)}return s}}}catch(e){}
   return fresh(true);
 }
 let storageOK=true;
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){storageOK=false}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){storageOK=false}if(window.onLocalSave) window.onLocalSave()}
 let S=load();
 let locked=!!(S.pins.a||S.pins.b); // com PIN criado, o app abre na tela de escolha de perfil
 const ui={view:'casal',ym:curYM(),q:'',scope:'todas',cat:'',folder:'',dq:'',list:'',docTab:'cofre',subC:'geral',subI:'geral'};
@@ -776,7 +776,7 @@ function vDocumentos(){
 
 const shareLabel=()=>`<span class="pa">${esc(N('a'))} ${S.defaultShareA}%</span> · <span class="pb">${esc(N('b'))} ${100-S.defaultShareA}%</span>. Dá para mudar em cada despesa.`;
 function vAjustes(){
-  return head('Ajustes')+`
+  return head('Ajustes')+(window.syncCard?window.syncCard():'')+`
   <section class="card"><h2>Quem usa o app</h2><div class="two">
     <div class="field"><label class="label" for="s-na"><i class="dot a"></i>Nome da pessoa 1</label><input type="text" id="s-na" maxlength="24" value="${esc(S.names.a)}"></div>
     <div class="field"><label class="label" for="s-nb"><i class="dot b"></i>Nome da pessoa 2</label><input type="text" id="s-nb" maxlength="24" value="${esc(S.names.b)}"></div></div></section>
@@ -829,6 +829,7 @@ function render(){
   document.body.classList.toggle('locked',locked);
   if(locked){freeUrls();$('#main').innerHTML=vLock();return}
   $('#lock-btn').hidden=!(S.pins.a||S.pins.b);
+  $('#who-seg').hidden=!!(window.syncConnected&&window.syncConnected()); // com login, o perfil é o da conta
   {const tb=$('#theme-btn'),dark=isDark();tb.hidden=!STANDALONE;tb.innerHTML=ic(dark?'sun':'moon');tb.setAttribute('aria-label',dark?'Mudar para o modo claro':'Mudar para o modo escuro');tb.title=dark?'Modo claro':'Modo escuro'}
   const nAl=alerts().length,cur=MORE.includes(ui.view)?'mais':ui.view;
   const navHtml=short=>VIEWS.map(k=>{const l=k==='individual'?N(S.me):(short?SHORT[k]:LABEL[k]);return `<button class="nav-btn" data-act="go" data-v="${k}" ${cur===k?'aria-current="page"':''}>${ic(k)}<span>${esc(l)}</span>${k==='casal'&&nAl?`<em class="badge" aria-label="${nAl} lembretes">${nAl}</em>`:''}</button>`}).join('');
@@ -1053,7 +1054,7 @@ function docDialog(){
     const r=await addDoc(f,{name,folder:fd.get('folder'),tags,expiry:fd.get('expiry')||''});return typeof r==='string'?r:null});
 }
 async function viewDoc(id){
-  const d=S.docs.find(x=>x.id===id);if(!d){toast('Esse comprovante não está mais no cofre.');return}
+  const d=S.docs.find(x=>x.id===id);if(!d){toast('O arquivo deste comprovante não está neste aparelho.');return}
   let body=`<p class="sub">${esc(d.folder)} · adicionado em ${shortDate(d.date)}${d.expiry?' · validade '+shortDate(d.expiry):''}${d.size?' · '+(d.size/1024/1024).toFixed(1).replace('.',',')+' MB':''}</p>`;
   if(!d.hasFile) body+='<p>Este é um documento de exemplo, sem arquivo.</p>';
   else if(d.type.startsWith('image/')){try{const blob=await fileGet(id);const u=URL.createObjectURL(blob);urls.push(u);body+=`<div class="viewer"><img src="${u}" alt="${esc(d.name)}"></div>`}catch(e){body+='<p>Não consegui abrir o arquivo neste navegador.</p>'}}
@@ -1079,6 +1080,7 @@ async function exportBackup(){
   try{await saveFile('conta-a-dois-backup-'+todayISO()+'.json',JSON.stringify(S));toast('Backup gerado. Guarde o arquivo em um lugar seguro.')}catch(e){toast('O backup foi cancelado ou bloqueado.')}
 }
 function restoreBackup(file){
+  if(window.syncConnected&&window.syncConnected()){toast('Saia da sincronização antes de restaurar um backup.');return}
   const r=new FileReader();
   r.onerror=()=>toast('Não consegui ler esse arquivo.');
   r.onload=()=>{
@@ -1149,7 +1151,7 @@ document.addEventListener('click',ev=>{
   if(a==='csv') return exportCsv();
   if(a==='backup') return exportBackup();
   if(a==='clear-demo') return confirmDlg('Apagar exemplos','Apagar todos os itens de exemplo? O que vocês mesmos lançaram fica.','Apagar exemplos',()=>{['expenses','settlements','bills','savings','docs','inventory'].forEach(k=>S[k]=S[k].filter(x=>!x.demo));S.inventory.forEach(i=>{if(i.docId&&!S.docs.some(d=>d.id===i.docId)) i.docId=''});S.lists.forEach(l=>l.items=l.items.filter(i=>!i.demo));S.budgets={casal:{},a:{},b:{}}});
-  if(a==='reset') return confirmDlg('Apagar tudo','Apagar todos os dados deste navegador, inclusive os documentos? Não dá para desfazer.','Apagar tudo',()=>{S.docs.forEach(d=>d.hasFile&&fileDel(d.id));const names=S.names,me=S.me,theme=S.theme;S=fresh(false);S.names=names;S.me=me;S.theme=theme});
+  if(a==='reset') return confirmDlg('Apagar tudo',(window.syncConnected&&window.syncConnected()?'Este aparelho sai da sincronização e os dados dele são apagados. O que já foi sincronizado continua guardado na nuvem e nos outros aparelhos. ':'')+'Apagar todos os dados deste navegador, inclusive os documentos? Não dá para desfazer.','Apagar tudo',()=>{if(window.syncForget) window.syncForget();S.docs.forEach(d=>d.hasFile&&fileDel(d.id));const names=S.names,me=S.me,theme=S.theme;S=fresh(false);S.names=names;S.me=me;S.theme=theme});
 });
 document.addEventListener('keydown',ev=>{
   if((ev.key==='Enter'||ev.key===' ')&&ev.target.classList&&ev.target.classList.contains('tap')){ev.preventDefault();ev.target.click()}
@@ -1185,6 +1187,9 @@ window.addEventListener('hashchange',fromHash);
 save();render();
 if(STANDALONE){try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}}
 </script>
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
+<script src="sync.js"></script>
 <script>
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){navigator.serviceWorker.register('sw.js').catch(()=>{})}
 </script>
