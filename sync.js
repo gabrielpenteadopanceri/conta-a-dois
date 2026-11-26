@@ -5,7 +5,7 @@
 const CFG=window.SYNC_CONFIG||{};
 const ON=!!(CFG.url&&CFG.key&&window.supabase&&window.supabase.createClient);
 const SKEY='contaadois.sync';
-const ARR={expense:'expenses',settlement:'settlements',bill:'bills',saving:'savings',inventory:'inventory',list:'lists',doc:'docs'};
+const ARR={expense:'expenses',settlement:'settlements',bill:'bills',saving:'savings',inventory:'inventory',list:'lists',doc:'docs',card:'cards'};
 let st=loadSt(),sb=null,session=null,busy=false,again=false,timer=null,needRender=false;
 let info={state:ON?'saindo':'desligada',msg:''}; // desligada | saindo (sem login) | sem-casal | ok | sincronizando | erro
 
@@ -31,6 +31,7 @@ function ridOf(kind,x){
     if(x.owner==='casal') return 'saving:'+x.id;
     return x.owner===me?priv('saving:'+x.id):null;
   }
+  if(kind==='bill'&&x.scope&&x.scope!=='casal') return x.scope===me?priv('bill:'+x.id):null; // conta fixa individual: só do dono
   if(kind==='doc'&&x.priv) return null;                    // comprovante de gasto individual: só no aparelho
   return kind+':'+x.id;
 }
@@ -39,6 +40,8 @@ function localRows(){
   for(const kind in ARR) for(const x of S[ARR[kind]]||[]){const id=ridOf(kind,x);if(id) put(id,kind,x)}
   put('config:names','config',{names:S.names});
   put('config:prefs','config',{defaultShareA:S.defaultShareA,remindDays:S.remindDays});
+  if(S.deco) put('config:deco:'+st.person,'config',{v:S.deco[st.person]});
+  if(S.cats) put('config:cats','config',{cats:S.cats});
   put('budget:casal','budget',S.budgets.casal||{});
   put(priv('budget'),'budget',S.budgets[st.person]||{});
   if(S.vault) put('config:vault','config',S.vault);
@@ -48,7 +51,7 @@ function parseRid(rid){const base=rid.startsWith('p:')?rid.split(':').slice(2).j
 function applyRow(r){
   const {base,kind,iid}=parseRid(r.id),arr=ARR[kind];
   if(arr){
-    const list=S[arr],i=list.findIndex(x=>x.id===iid);
+    const list=S[arr]||(S[arr]=[]),i=list.findIndex(x=>x.id===iid);
     if(r.deleted){if(i>=0&&ridOf(kind,list[i])===r.id) list.splice(i,1)}
     else if(i>=0) list[i]=r.data; else list.push(r.data);
     return;
@@ -56,6 +59,8 @@ function applyRow(r){
   if(r.deleted) return;
   if(base==='config:names'&&r.data.names) S.names=r.data.names;
   else if(base==='config:prefs'){if(typeof r.data.defaultShareA==='number') S.defaultShareA=r.data.defaultShareA;if(r.data.remindDays) S.remindDays=r.data.remindDays}
+  else if(base==='config:cats'){if(Array.isArray(r.data.cats)&&r.data.cats.length) S.cats=r.data.cats}
+  else if(base==='config:deco:a'||base==='config:deco:b'){if(r.data.v){if(!S.deco) S.deco={};S.deco[base.slice(-1)]=r.data.v}}
   else if(base==='config:vault'){if(r.data&&r.data.salt){S.vault=r.data;vkey=null}}
   else if(base==='budget:casal') S.budgets.casal=r.data||{};
   else if(base==='budget') S.budgets[st.person]=r.data||{};

@@ -270,6 +270,17 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 #who-seg span{white-space:nowrap}
 .fl{width:17px;height:17px;margin-right:6px;color:var(--pb-fill);flex:none}
 #who-seg input:checked+span .fl{color:var(--on-accent)}
+.fl.fa{color:var(--pa)}
+.chip .fl{vertical-align:-3px}
+.chip[aria-pressed="true"] .fl{color:currentColor}
+.cat-chip{display:inline-flex;align-items:center;gap:2px;padding:4px 6px 4px 16px;cursor:default;color:inherit;min-height:42px}
+.cat-chip .icon-btn{width:32px;height:32px;font-size:1.2rem;line-height:1}
+.hbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:baseline;padding:10px 0}
+.hbar+.hbar{border-top:1px solid var(--soft)}
+.hbar .track i{background:var(--accent)}
+.bars.y12{gap:5px}.bars.y12 .stack{width:min(100%,30px)}
+.bar-labels.y12{gap:5px}.bar-labels.y12 span{font-size:.7rem;overflow:hidden}
+.bars .sm{background:var(--accent)}
 /* tela de entrada */
 .lock{display:flex;flex-direction:column;align-items:center;gap:26px;padding-top:8vh;text-align:center}
 .lock .grid{width:min(560px,100%)}
@@ -287,7 +298,7 @@ body.locked .rail{display:none}
 .hero>*{position:relative}
 .hero-deco{position:absolute!important;right:-4px;top:-12px;width:min(200px,34%);pointer-events:none}
 .hero-deco svg{display:block;width:100%;height:auto}
-body[data-me="b"]{background-image:var(--petals);background-size:340px 340px}
+body[data-me]{background-image:var(--pattern,none);background-size:340px 340px}
 body[data-me="b"] .hero{background:linear-gradient(115deg,var(--surface) 48%,color-mix(in srgb,var(--pb-fill) 24%,var(--surface)))}
 body[data-me="b"] .card,body[data-me="b"] .hero{border-radius:28px}
 @media (max-width:860px){.fab{right:18px;bottom:calc(92px + env(safe-area-inset-bottom,0px))}}
@@ -329,7 +340,6 @@ input[type=date]{-webkit-appearance:none;appearance:none}
 .who-card.b .av{background:color-mix(in srgb,var(--pb-fill) 22%,var(--surface))}
 body.locked .me-chip{display:none}
 /* perfil vermelho: futebol */
-body[data-me="a"]{background-image:var(--balls);background-size:340px 340px}
 body[data-me="a"] .hero{background:linear-gradient(115deg,var(--surface) 52%,color-mix(in srgb,var(--pa) 13%,var(--surface)))}
 @media (max-width:860px){.me-chip{margin-left:auto}}
 @media (max-width:520px){.me-sw{display:none}.me-chip{padding-right:14px}}
@@ -410,12 +420,13 @@ function installments(total,n){const base=Math.floor(total/n);return Array.from(
 
 /* ---------- estado ---------- */
 const KEY='contaadois.v2';
-const APP_VERSION='25/11 22:09';
+const APP_VERSION='25/11 22:36';
 const UA=navigator.userAgent||'';
 const IS_SAMSUNG=/SamsungBrowser/i.test(UA);
 const BROWSER=(()=>{let m=UA.match(/SamsungBrowser\/(\d+)/);if(m) return 'Internet da Samsung '+m[1];m=UA.match(/Chrome\/(\d+)/);if(m) return 'Chrome '+m[1];m=UA.match(/Version\/(\d+).*Safari/);if(m) return 'Safari '+m[1];return 'outro navegador'})();
 const STANDALONE=!window.claude; // fora do Claude: app instalado ou aberto direto no navegador
-const CATS=['Moradia','Mercado','Contas da casa','Transporte','Restaurantes','Lazer','Saúde','Compras','Assinaturas','Outros'];
+const DEFAULT_CATS=['Moradia','Mercado','Contas da casa','Transporte','Restaurantes','Lazer','Saúde','Compras','Assinaturas','Outros'];
+let CATS=DEFAULT_CATS.slice(); // as categorias em uso vêm de S.cats (Ajustes)
 const ROOMS=['Sala','Cozinha','Quarto','Banheiro','Lavanderia','Escritório','Outros'];
 const FOLDERS=['Notas fiscais','Contratos','Assinaturas','Garantias','Apartamento','Outros'];
 const ICON={
@@ -429,6 +440,10 @@ const ICON={
   moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>',
   mais:'<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>',
+  card:'<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/>',
+  chart:'<path d="M5 20V10M12 20V4M19 20v-7"/>',
+  ahead:'<path d="M4 17l5-5 4 3 7-8M15 7h5v5"/>',
+  hist:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
   lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
   del:'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',
@@ -456,7 +471,7 @@ const CAT_IC={
 const catIc=c=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${CAT_IC[c]||CAT_IC['Outros']}</svg>`;
 const ic=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
 const VIEWS=['casal','individual','despesas','contas','mais'];
-const MORE=['listas','documentos','ajustes','fechamento'];
+const MORE=['listas','documentos','ajustes','fechamento','cartoes','futuro','ano'];
 const LABEL={mais:'Mais',casal:'Casal',despesas:'Lançamentos',contas:'Contas fixas',listas:'Listas',documentos:'Documentos',ajustes:'Ajustes'};
 const SHORT={mais:'Mais',casal:'Casal',despesas:'Gastos',contas:'Contas',listas:'Listas',documentos:'Docs',ajustes:'Ajustes'};
 
@@ -520,28 +535,46 @@ function seed(){
   S0.lists[0].items=[it('Arroz','a'),it('Café','b'),it('Detergente','b'),it('Queijo','a',0,true)];
   S0.lists[1].items=[it('Cortina da sala','b',35000),it('Panela de pressão','a',18000),it('Tapete do banheiro','b')];
   seedInventory(S0);
+  S0.cards=[{id:'c-demo',name:'Cartão do casal',closeDay:25,dueDay:5,holder:'a',demo:true}];
+  S0.expenses.filter(e=>e.scope==='casal'&&!e.billId).slice(0,4).forEach(e=>e.cardId='c-demo');
 }
 function fresh(withDemo){
-  S0={v:2,setupDone:false,names:{a:'Pessoa 1',b:'Pessoa 2'},me:'a',defaultShareA:50,expenses:[],settlements:[],bills:[],budgets:{casal:{},a:{},b:{}},savings:[],docs:[],inventory:[],remindDays:5,theme:'claro',pins:{a:null,b:null},
+  S0={v:2,setupDone:false,names:{a:'Pessoa 1',b:'Pessoa 2'},me:'a',defaultShareA:50,expenses:[],settlements:[],bills:[],budgets:{casal:{},a:{},b:{}},savings:[],docs:[],inventory:[],cards:[],cats:DEFAULT_CATS.slice(),deco:{a:'futebol',b:'flores'},remindDays:5,theme:'claro',pins:{a:null,b:null},
       lists:[{id:'l-mercado',name:'Mercado',items:[]},{id:'l-casa',name:'Para a casa',items:[]}]};
   if(withDemo) seed();
   return S0;
 }
+// campos criados em versões mais novas: completa o que faltar
+function norm(s){
+  if(!Array.isArray(s.cards)) s.cards=[];
+  if(!Array.isArray(s.cats)||!s.cats.length) s.cats=DEFAULT_CATS.slice();
+  if(!s.deco||typeof s.deco!=='object') s.deco={a:'futebol',b:'flores'};
+  if(!s.deco.a) s.deco.a='futebol';if(!s.deco.b) s.deco.b='flores';
+  return s;
+}
 function load(){
-  try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&s.v===2){if(s.setupDone===undefined) s.setupDone=true;if(!s.remindDays) s.remindDays=5;if(!s.theme) s.theme='claro';if(!s.pins) s.pins={a:null,b:null};{const fix={'Mercado':'l-mercado','Para a casa':'l-casa'};for(const l of s.lists){const f=fix[l.name];if(f&&l.id!==f&&!s.lists.some(x=>x.id===f)) l.id=f}}if(!s.inventory){s.inventory=[];if(s.docs.some(d=>d.demo)) seedInventory(s)}return s}}}catch(e){}
+  try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&s.v===2){if(s.setupDone===undefined) s.setupDone=true;if(!s.remindDays) s.remindDays=5;if(!s.theme) s.theme='claro';if(!s.pins) s.pins={a:null,b:null};{const fix={'Mercado':'l-mercado','Para a casa':'l-casa'};for(const l of s.lists){const f=fix[l.name];if(f&&l.id!==f&&!s.lists.some(x=>x.id===f)) l.id=f}}if(!s.inventory){s.inventory=[];if(s.docs.some(d=>d.demo)) seedInventory(s)}return norm(s)}}}catch(e){}
   return fresh(false);
 }
 let storageOK=true;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){storageOK=false}if(window.onLocalSave) window.onLocalSave()}
 let S=load();
+CATS=S.cats;
 let locked=!!(S.pins.a||S.pins.b); // com PIN criado, o app abre na tela de escolha de perfil
-const ui={view:'casal',ym:curYM(),q:'',scope:'todas',cat:'',folder:'',dq:'',list:'',docTab:'cofre',subC:'geral',subI:'geral'};
+const ui={view:'casal',ym:curYM(),q:'',scope:'todas',cat:'',folder:'',dq:'',list:'',docTab:'cofre',subC:'geral',subI:'geral',year:Number(curYM().slice(0,4)),anoWho:'casal',fut:'casal'};
 const N=p=>S.names[p]||(p==='a'?'Pessoa 1':'Pessoa 2');
-const hasDemo=()=>['expenses','settlements','bills','savings','docs','inventory'].some(k=>S[k].some(x=>x.demo))||S.lists.some(l=>l.items.some(x=>x.demo));
+const hasDemo=()=>['expenses','settlements','bills','savings','docs','inventory','cards'].some(k=>S[k].some(x=>x.demo))||S.lists.some(l=>l.items.some(x=>x.demo));
 const hasDoc=id=>!!id&&S.docs.some(d=>d.id===id); // o arquivo existe neste aparelho?
 const visible=e=>!(e.scope===other(S.me)&&e.payer===other(S.me));
 const monthExp=ym=>S.expenses.filter(e=>e.date.slice(0,7)===ym);
 const savedOf=g=>sum(g.moves,m=>m.amount);
+const allCats=list=>[...new Set([...CATS,...list.map(e=>e.cat)])]; // inclui categorias antigas que ainda têm lançamento
+const catOpts=sel=>(sel&&!CATS.includes(sel)?[...CATS,sel]:CATS).map(c=>`<option ${c===sel?'selected':''}>${esc(c)}</option>`).join('');
+const billScope=b=>b.scope||'casal';
+const myBills=()=>S.bills.filter(b=>billScope(b)==='casal'||b.scope===S.me);
+// cartão de crédito: a compra pesa no mês em que a fatura vence
+const cardOf=e=>e.cardId?S.cards.find(c=>c.id===e.cardId):null;
+function invoiceYM(e,c){const ym=e.date.slice(0,7),close=Number(e.date.slice(8))>c.closeDay?addMonths(ym,1):ym;return c.dueDay>c.closeDay?close:addMonths(close,1)}
 
 /* ---------- arquivos (IndexedDB) ---------- */
 let idbP=null;
@@ -559,20 +592,20 @@ function freeUrls(){urls.forEach(u=>URL.revokeObjectURL(u));urls=[]}
 /* ---------- peças de tela ---------- */
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('on'),2600)}
 function monthNav(){return `<div class="month"><button class="icon-btn" data-act="month" data-n="-1" aria-label="Mês anterior">${ic('prev')}</button><b>${esc(monthLabel(ui.ym))}</b><button class="icon-btn" data-act="month" data-n="1" aria-label="Próximo mês">${ic('next')}</button></div>`}
-function head(title,right=''){const back=['listas','documentos','ajustes'].includes(ui.view)?`<button class="btn small ghost back" data-act="go" data-v="mais">${ic('prev')}Mais</button>`:'';return `${back}<div class="head"><h1>${esc(title)}</h1><div class="toolbar">${right}</div></div>`}
+function head(title,right=''){const back=['listas','documentos','ajustes','cartoes','futuro','ano'].includes(ui.view)?`<button class="btn small ghost back" data-act="go" data-v="mais">${ic('prev')}Mais</button>`:'';return `${back}<div class="head"><h1>${esc(title)}</h1><div class="toolbar">${right}</div></div>`}
 function demoBanner(){return hasDemo()&&ui.view==='casal'?`<div class="banner"><span><strong>Dados de exemplo</strong> para mostrar as telas.</span><button class="btn small" data-act="clear-demo">Apagar exemplos</button></div>`:''}
 function splitBar(e){if(e.scope!=='casal') return `<div class="split" title="Só de ${esc(N(e.scope))}"><i style="width:${e.scope==='a'?100:0}%"></i><b></b></div>`;return `<div class="split" title="${esc(N('a'))} ${e.shareA}% · ${esc(N('b'))} ${100-e.shareA}%"><i style="width:${e.shareA}%"></i><b></b></div>`}
 function expRow(e){
   const who=e.scope==='casal'?`casal ${e.shareA}/${100-e.shareA}`:`só de ${N(e.scope)}`;
-  return `<li class="row x tap" data-act="edit-exp" data-id="${e.id}" tabindex="0" role="button"><span class="cat-ic">${catIc(e.cat)}</span><div><strong>${esc(e.desc)}</strong><span class="sub">${esc(N(e.payer))} pagou · ${esc(who)}${e.docId&&!hasDoc(e.docId)?' · comprovante guardado em outro aparelho':''}${e.demo?' · exemplo':''}</span></div>
+  return `<li class="row x tap" data-act="edit-exp" data-id="${e.id}" tabindex="0" role="button"><span class="cat-ic">${catIc(e.cat)}</span><div><strong>${esc(e.desc)}</strong><span class="sub">${esc(N(e.payer))} pagou · ${esc(who)}${cardOf(e)?' · crédito '+esc(cardOf(e).name):''}${e.docId&&!hasDoc(e.docId)?' · comprovante guardado em outro aparelho':''}${e.demo?' · exemplo':''}</span></div>
   <div class="amt-col"><span class="amt">${brl(e.amount)}</span>${splitBar(e)}</div>${hasDoc(e.docId)?`<button class="icon-btn" data-act="view-doc" data-id="${e.docId}" aria-label="Ver comprovante">${ic('clip')}</button>`:'<span></span>'}</li>`;
 }
 // flores do perfil rosa: desenho próprio, cinco pétalas e miolo
 function blossom(x,y,s,rot,fill,center='#F4C04E'){let p='';for(let k=0;k<5;k++) p+=`<ellipse cx="0" cy="-13" rx="8.5" ry="13" transform="rotate(${k*72})"/>`;return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})"><g fill="${fill}">${p}</g><circle r="5.5" fill="${center}"/></g>`}
 const leaf=(x,y,r,s=1)=>`<ellipse cx="${x}" cy="${y}" rx="${7*s}" ry="${17*s}" transform="rotate(${r} ${x} ${y})" fill="#8FC39B"/>`;
-const FLOWERS=`<svg viewBox="0 0 280 210" xmlns="http://www.w3.org/2000/svg">${leaf(160,128,42,1.25)}${leaf(222,160,-32,1.1)}${leaf(128,62,72)}${leaf(250,70,-52,1.1)}${blossom(202,76,2.2,10,'#F28DBD')}${blossom(128,118,1.5,40,'#F7B6D4')}${blossom(240,152,1.45,-15,'#E66AA6')}${blossom(150,36,1,20,'#E66AA6')}${blossom(84,160,.9,0,'#F28DBD')}${blossom(262,28,.8,30,'#F7B6D4')}</svg>`;
-const FLOWER_ICON=`<svg class="fl" viewBox="-24 -24 48 48" aria-hidden="true">${blossom(0,0,1.4,0,'currentColor')}</svg>`;
-// bola de futebol genérica, em vermelho e branco, para o perfil vermelho
+const PAL={a:['#CF1B33','#F1B3BC','#E2596B'],b:['#F28DBD','#F7B6D4','#E66AA6']};
+const flowersHero=p=>`<svg viewBox="0 0 280 210" xmlns="http://www.w3.org/2000/svg">${leaf(160,128,42,1.25)}${leaf(222,160,-32,1.1)}${leaf(128,62,72)}${leaf(250,70,-52,1.1)}${blossom(202,76,2.2,10,p[0])}${blossom(128,118,1.5,40,p[1])}${blossom(240,152,1.45,-15,p[2])}${blossom(150,36,1,20,p[2])}${blossom(84,160,.9,0,p[0])}${blossom(262,28,.8,30,p[1])}</svg>`;
+// bola de futebol genérica, na cor do perfil e branco
 let ballN=0;
 function ball(x,y,r,rot=0,c='#CF1B33'){
   const pent=(cx,cy,rr,a0)=>{let d='';for(let k=0;k<5;k++){const a=(a0+k*72-90)*Math.PI/180;d+=(k?'L':'M')+(cx+rr*Math.cos(a)).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1)}return d+'Z'};
@@ -583,12 +616,40 @@ function ball(x,y,r,rot=0,c='#CF1B33'){
   const id='ball'+(++ballN);
   return `<g transform="translate(${x} ${y}) rotate(${rot})"><clipPath id="${id}"><circle r="${r}"/></clipPath><circle r="${r}" fill="#fff"/><g clip-path="url(#${id})"><path d="${patches}" fill="${c}"/><path d="${lines}" stroke="${c}" stroke-width="${(r*.06).toFixed(1)}" fill="none"/></g><circle r="${r}" fill="none" stroke="${c}" stroke-width="${(r*.07).toFixed(1)}"/></g>`;
 }
-const BALLS=`<svg viewBox="0 0 280 210" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(-24 200 40)"><rect x="70" y="-6" width="320" height="15" rx="7" fill="#CF1B33"/><rect x="100" y="20" width="320" height="15" rx="7" fill="#F1B3BC"/><rect x="130" y="46" width="320" height="15" rx="7" fill="#CF1B33" opacity=".55"/></g>${ball(196,96,60,14)}${ball(108,150,25,-22)}${ball(250,176,17,35)}</svg>`;
-const BALL_ICON=`<svg class="fl" viewBox="-24 -24 48 48" aria-hidden="true">${ball(0,0,21,0)}</svg>`;
-const avatar=p=>p==='b'?FLOWER_ICON:BALL_ICON;
-const heroDeco=()=>`<div class="hero-deco" aria-hidden="true">${S.me==='b'?FLOWERS:BALLS}</div>`;
-try{document.documentElement.style.setProperty('--balls','url("data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="340" height="340" opacity=".13">${ball(60,70,15,10)}${ball(250,40,9,40)}${ball(180,190,12,-20)}${ball(40,270,9,5)}${ball(300,290,14,30)}</svg>`)+'")')}catch(e){}
-try{document.documentElement.style.setProperty('--petals','url("data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="340" height="340" opacity=".34">${blossom(60,70,.75,12,'#F7B6D4','#F9DC9A')}${blossom(250,40,.5,40,'#F7B6D4','#F9DC9A')}${blossom(180,190,.62,-20,'#F7B6D4','#F9DC9A')}${blossom(40,270,.5,5,'#F7B6D4','#F9DC9A')}${blossom(300,290,.7,30,'#F7B6D4','#F9DC9A')}</svg>`)+'")')}catch(e){}
+const ballsHero=p=>`<svg viewBox="0 0 280 210" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(-24 200 40)"><rect x="70" y="-6" width="320" height="15" rx="7" fill="${p[0]}"/><rect x="100" y="20" width="320" height="15" rx="7" fill="${p[1]}"/><rect x="130" y="46" width="320" height="15" rx="7" fill="${p[0]}" opacity=".55"/></g>${ball(196,96,60,14,p[0])}${ball(108,150,25,-22,p[0])}${ball(250,176,17,35,p[0])}</svg>`;
+// desenhos que cada pessoa pode escolher (Ajustes). Cada forma cabe em um círculo de raio 20, centrada em 0,0.
+const starPath=(()=>{let d='';for(let k=0;k<10;k++){const r=k%2?8.6:20,a=(k*36-90)*Math.PI/180;d+=(k?'L':'M')+(r*Math.cos(a)).toFixed(1)+' '+(r*Math.sin(a)).toFixed(1)}return d+'Z'})();
+const THEMES={
+  flores:{label:'Flores',shape:f=>blossom(0,0,.77,0,f),hero:flowersHero},
+  futebol:{label:'Futebol',shape:f=>ball(0,0,20,0,f),hero:ballsHero,ti:0,op:.13},
+  estrelas:{label:'Estrelas',shape:f=>`<path fill="${f}" d="${starPath}"/>`},
+  coracoes:{label:'Corações',shape:f=>`<path fill="${f}" d="M0 18C-26 0-18-18-7-18C-2-18 0-14 0-11C0-14 2-18 7-18C18-18 26 0 0 18Z"/>`},
+  folhas:{label:'Folhas',shape:f=>`<path fill="${f}" d="M0-20C14-10 14 8 0 20C-14 8-14-10 0-20Z"/><path d="M0-13V15" stroke="#fff" stroke-opacity=".65" stroke-width="1.6" fill="none"/>`},
+  peixes:{label:'Peixinhos',still:true,shape:f=>`<path fill="${f}" d="M-19 0C-11-12 5-12 11 0C5 12-11 12-19 0Z"/><path fill="${f}" d="M9 0L20-9V9Z"/><circle cx="-11" cy="-2" r="1.9" fill="#fff"/>`},
+  montanhas:{label:'Montanhas',still:true,shape:f=>`<path fill="${f}" d="M-22 15L-6-15L3 1L9-7L22 15Z"/><path fill="#fff" fill-opacity=".8" d="M-6-15L-10.5-6.5L-6.5-9L-3-5.5L-.8-5.8Z"/>`},
+  patinhas:{label:'Patinhas',shape:f=>`<g fill="${f}"><ellipse cx="0" cy="8" rx="10" ry="8.5"/><ellipse cx="-13" cy="-3" rx="4.2" ry="5.6"/><ellipse cx="-4.8" cy="-12" rx="4.3" ry="6"/><ellipse cx="4.8" cy="-12" rx="4.3" ry="6"/><ellipse cx="13" cy="-3" rx="4.2" ry="5.6"/></g>`},
+  musica:{label:'Música',shape:f=>`<g fill="${f}"><ellipse cx="-6" cy="12" rx="7" ry="5.2" transform="rotate(-20 -6 12)"/><rect x="-1.6" y="-17" width="3" height="29"/><path d="M1.4-17C9-16 15-10 13 1C10-5 6-8 1.4-8Z"/></g>`},
+  nenhum:{label:'Sem desenho'}
+};
+const themeOf=p=>THEMES[S.deco&&S.deco[p]]||THEMES.nenhum;
+const put=(inner,x,y,sc,rot)=>`<g transform="translate(${x} ${y}) rotate(${rot}) scale(${sc})">${inner}</g>`;
+function themeIcon(k,p){const t=THEMES[k]||THEMES.nenhum;return `<svg class="fl ${p==='a'?'fa':''}" viewBox="-24 -24 48 48" aria-hidden="true">${t.shape?t.shape(k==='futebol'?PAL[p][0]:'currentColor'):'<circle r="13" fill="currentColor"/>'}</svg>`}
+const avatar=p=>themeIcon(S.deco&&S.deco[p],p);
+function heroDeco(){
+  const t=themeOf(S.me),p=PAL[S.me];if(!t.shape) return '';
+  if(t.hero) return `<div class="hero-deco" aria-hidden="true">${t.hero(p)}</div>`;
+  const r=n=>t.still?0:n;
+  return `<div class="hero-deco" aria-hidden="true"><svg viewBox="0 0 280 210" xmlns="http://www.w3.org/2000/svg">${put(t.shape(p[0]),202,78,2.9,r(10))}${put(t.shape(p[1]),122,122,1.95,r(-24))}${put(t.shape(p[2]),242,160,1.8,r(-15))}${put(t.shape(p[2]),150,34,1.3,r(20))}${put(t.shape(p[0]),80,164,1.15,r(8))}${put(t.shape(p[1]),262,28,1.05,r(30))}</svg></div>`;
+}
+// fundo da tela com o desenho escolhido, na cor do perfil
+let patKey='';
+function setPattern(){
+  const k=S.me+':'+(S.deco&&S.deco[S.me]);if(k===patKey) return;patKey=k;
+  const t=themeOf(S.me),p=PAL[S.me];let v='none';
+  if(t.shape){const f=p[t.ti===undefined?1:t.ti],r=n=>t.still?0:n;
+    v='url("data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="340" height="340" opacity="${t.op||.34}">${put(t.shape(f),60,70,.78,r(12))}${put(t.shape(f),250,40,.5,r(40))}${put(t.shape(f),180,190,.64,r(-20))}${put(t.shape(f),40,270,.5,r(5))}${put(t.shape(f),300,290,.72,r(30))}</svg>`)+'")'}
+  try{document.documentElement.style.setProperty('--pattern',v)}catch(e){}
+}
 const subTabs=(k,opts)=>`<div class="tabs">${opts.map(([v,l])=>`<button class="tab" data-act="sub" data-k="${k}" data-v="${v}" aria-selected="${ui[k]===v}">${l}</button>`).join('')}</div>`;
 const quick=items=>`<div class="quick">${items.map(([act,attrs,icn,l])=>`<button class="q" data-act="${act}" ${attrs}><span class="q-ic">${ic(icn)}</span><span>${l}</span></button>`).join('')}</div>`;
 function catRow(x){
@@ -600,7 +661,7 @@ function catRow(x){
 }
 function catCard(owner,list,title){
   const b=S.budgets[owner]||{};
-  const cats=CATS.map(c=>({c,spent:sum(list.filter(e=>e.cat===c),e=>e.amount),lim:b[c]||0})).filter(x=>x.spent||x.lim).sort((x,y)=>y.spent-x.spent);
+  const cats=allCats(list).map(c=>({c,spent:sum(list.filter(e=>e.cat===c),e=>e.amount),lim:b[c]||0})).filter(x=>x.spent||x.lim).sort((x,y)=>y.spent-x.spent);
   return `<div class="card"><div class="head"><h2>${esc(title)}</h2><button class="btn small" data-act="budgets" data-owner="${owner}">Definir limites</button></div>${cats.length?cats.map(catRow).join(''):'<p class="empty">Nenhuma despesa neste mês.</p>'}</div>`;
 }
 function savCard(g){
@@ -611,7 +672,7 @@ function savCard(g){
   return `<div class="card sav"><div class="head"><h3>${esc(g.name)}${g.demo?' <span class="sub">· exemplo</span>':''}</h3><span class="acts"><button class="icon-btn" data-act="edit-sav" data-id="${g.id}" aria-label="Editar">${ic('edit')}</button><button class="icon-btn" data-act="del-sav" data-id="${g.id}" aria-label="Excluir">${ic('del')}</button></span></div>
     <span class="num">${brl(saved)}</span>
     ${p!==null?`<div class="prog"><i style="width:${p}%"></i></div><span class="sub">${Math.round(p)}% da meta de ${brl(g.target)}</span>`:'<span class="sub">Sem meta definida</span>'}
-    ${contrib}<div><button class="btn small" data-act="move-sav" data-id="${g.id}">Guardar ou retirar</button></div></div>`;
+    ${contrib}<div><div class="toolbar"><button class="btn small" data-act="move-sav" data-id="${g.id}">Guardar ou retirar</button><button class="btn small ghost" data-act="hist-sav" data-id="${g.id}">${ic('hist')}Histórico</button></div></div>`;
 }
 function savSection(owner,title){
   const list=S.savings.filter(g=>g.owner===owner);
@@ -627,11 +688,11 @@ function balText(bal){
 // lembretes de hoje: contas fixas do mês corrente, documentos e garantias perto do vencimento
 function alerts(){
   const out=[],cur=curYM(),today=new Date().getDate(),dd=n=>n+(n===1?' dia':' dias');
-  for(const b of S.bills){
+  for(const b of myBills()){
     if(S.expenses.some(e=>e.billId===b.id&&e.ym===cur)) continue;
     const diff=b.dueDay-today;
-    if(diff<0) out.push({k:'crit',title:b.name,sub:'Conta fixa · '+brl(b.amount),t:'Atrasada há '+dd(-diff),order:diff});
-    else if(diff<=S.remindDays) out.push({k:'warn',title:b.name,sub:'Conta fixa · '+brl(b.amount),t:diff===0?'Vence hoje':'Vence em '+dd(diff),order:diff});
+    if(diff<0) out.push({k:'crit',title:b.name,sub:(billScope(b)==='casal'?'Conta fixa · ':'Sua conta fixa · ')+brl(b.amount),t:'Atrasada há '+dd(-diff),order:diff});
+    else if(diff<=S.remindDays) out.push({k:'warn',title:b.name,sub:(billScope(b)==='casal'?'Conta fixa · ':'Sua conta fixa · ')+brl(b.amount),t:diff===0?'Vence hoje':'Vence em '+dd(diff),order:diff});
   }
   for(const d of S.docs){if(!d.expiry) continue;const n=daysUntil(d.expiry);
     if(n<=30) out.push({k:n<0?'crit':'warn',title:d.name,sub:'Documento · '+d.folder,t:n<0?'Venceu em '+shortDate(d.expiry):n===0?'Vence hoje':'Vence em '+dd(n),order:n})}
@@ -685,12 +746,12 @@ function vFechamento(){ // aberto pela aba Casal ou pela tela Mais
   const per=['a','b'].map(p=>{const paid=sum(casal.filter(e=>e.payer===p),e=>e.amount),share=sum(casal,e=>shareOf(e,p));return {p,paid,share,diff:paid-share}});
   const delta=ptot?Math.round((tot-ptot)/ptot*100):null;
   const lim=S.budgets.casal||{};
-  const cats=CATS.map(c=>({c,spent:sum(casal.filter(e=>e.cat===c),e=>e.amount),lim:lim[c]||0})).filter(x=>x.spent).sort((x,y)=>y.spent-x.spent);
+  const cats=allCats(casal).map(c=>({c,spent:sum(casal.filter(e=>e.cat===c),e=>e.amount),lim:lim[c]||0})).filter(x=>x.spent).sort((x,y)=>y.spent-x.spent);
   const over=cats.filter(x=>x.lim&&x.spent>x.lim);
   const inM=m=>m.date.slice(0,7)===ym;
   const savBy=p=>sum(S.savings.filter(g=>g.owner==='casal'),g=>sum(g.moves.filter(m=>inM(m)&&m.by===p),m=>m.amount));
   const savMine=sum(S.savings.filter(g=>g.owner===me),g=>sum(g.moves.filter(inM),m=>m.amount));
-  const paidBills=S.bills.filter(b=>S.expenses.some(e=>e.billId===b.id&&e.ym===ym)).length;
+  const cBills=S.bills.filter(b=>billScope(b)==='casal'),paidBills=cBills.filter(b=>S.expenses.some(e=>e.billId===b.id&&e.ym===ym)).length;
   const ind=sum(ex.filter(e=>e.scope===me),e=>e.amount),myPart=sum(casal,e=>shareOf(e,me));
   const perHtml=per.map(x=>`<span><i class="dot ${x.p}"></i><strong>${esc(N(x.p))}</strong> pagou</span><b>${brl(x.paid)}</b><span class="sub">Parte que cabia</span><b>${brl(x.share)}</b><span class="sub">${x.diff>=0?'Pagou a mais':'Pagou a menos'}</span><b>${brl(Math.abs(x.diff))}</b>`).join('<span class="sep"></span>');
   const vs=delta===null?'Sem despesas do casal em '+monthLabel(pm)+' para comparar.':delta===0?'Igual a '+monthLabel(pm)+'.':Math.abs(delta)+'% '+(delta>0?'acima':'abaixo')+' de '+monthLabel(pm)+' ('+brl(ptot)+').';
@@ -719,7 +780,7 @@ function vFechamento(){ // aberto pela aba Casal ou pela tela Mais
       <span>Sua parte nas despesas do casal</span><b>${brl(myPart)}</b>
       <span>Seus gastos individuais</span><b>${brl(ind)}</b>
       <span class="sep"></span><span><strong>Custo total</strong></span><b>${brl(myPart+ind)}</b>
-      <span class="sep"></span><span>Contas fixas pagas</span><b>${paidBills} de ${S.bills.length}</b></div></div>
+      <span class="sep"></span><span>Contas fixas pagas</span><b>${paidBills} de ${cBills.length}</b></div></div>
   </section>`;
 }
 
@@ -766,7 +827,7 @@ function vDespesas(){
   <div class="toolbar">
     <input type="search" id="f-q" placeholder="Buscar por descrição ou categoria" value="${esc(ui.q)}" aria-label="Buscar despesas">
     <select id="f-scope" aria-label="De quem"><option value="todas">Todas</option><option value="casal">Do casal</option><option value="minhas">Só minhas</option></select>
-    <select id="f-cat" aria-label="Categoria"><option value="">Todas as categorias</option>${CATS.map(c=>`<option>${esc(c)}</option>`).join('')}</select>
+    <select id="f-cat" aria-label="Categoria"><option value="">Todas as categorias</option>${catOpts(ui.cat)}</select>
   </div>
   <section class="card"><ul class="list" id="exp-list">${expRows()}</ul></section>`;
 }
@@ -784,13 +845,14 @@ function billState(b){
   return {k:'',t:'Vence dia '+b.dueDay};
 }
 function vContas(){
-  const rows=S.bills.slice().sort((x,y)=>x.dueDay-y.dueDay).map(b=>{const st=billState(b);
-    return `<li class="row x tap" data-act="edit-bill" data-id="${b.id}" tabindex="0" role="button"><span class="cat-ic">${catIc(b.cat)}</span><div><strong>${esc(b.name)}</strong><span class="sub">Todo dia ${b.dueDay} · ${brl(st.paid?st.paid.amount:b.amount)}${b.demo?' · exemplo':''}</span><span class="pill ${st.k}">${esc(st.t)}</span></div><span></span>
+  const mine=myBills();
+  const rows=mine.slice().sort((x,y)=>x.dueDay-y.dueDay).map(b=>{const st=billState(b);
+    return `<li class="row x tap" data-act="edit-bill" data-id="${b.id}" tabindex="0" role="button"><span class="cat-ic">${catIc(b.cat)}</span><div><strong>${esc(b.name)}</strong><span class="sub">Todo dia ${b.dueDay} · ${brl(st.paid?st.paid.amount:b.amount)} · ${billScope(b)==='casal'?'do casal':'só sua'}${b.demo?' · exemplo':''}</span><span class="pill ${st.k}">${esc(st.t)}</span></div><span></span>
     ${st.paid?`<button class="btn small ghost" data-act="unpay" data-id="${b.id}">Desfazer</button>`:`<button class="btn small primary" data-act="pay" data-id="${b.id}">Pagar</button>`}</li>`}).join('')||'<li class="empty">Nenhuma conta fixa cadastrada.</li>';
-  const tot=sum(S.bills,b=>b.amount),paid=sum(S.bills,b=>{const p=billState(b).paid;return p?p.amount:0});
+  const tot=sum(mine,b=>b.amount),paid=sum(mine,b=>{const p=billState(b).paid;return p?p.amount:0});
   return head('Contas fixas',monthNav()+`<button class="btn primary" data-act="new-bill">Nova conta fixa</button>`)+demoBanner()+`
   <section class="grid g2"><div class="card tile"><span class="label">Previsto no mês</span><span class="num">${brl(tot)}</span></div><div class="card tile"><span class="label">Já pago</span><span class="num">${brl(paid)}</span></div></section>
-  <section class="card"><ul class="list">${rows}</ul><p class="sub">Toque em uma conta para editar. Ao pagar, ela entra nas despesas do casal com a divisão padrão.</p></section>`;
+  <section class="card"><ul class="list">${rows}</ul><p class="sub">Toque em uma conta para editar. Ao pagar, a conta do casal entra nas despesas do casal com a divisão padrão, e a conta só sua entra nos seus gastos individuais. As contas individuais de cada um não aparecem para o outro.</p></section>`;
 }
 
 function curList(){return S.lists.find(l=>l.id===ui.list)||S.lists[0]}
@@ -845,6 +907,71 @@ function vDocumentos(){
   <section class="docs" id="doc-grid">${cards}</section>`;
 }
 
+function vCartoes(){
+  const ym=ui.ym,ex=S.expenses.filter(visible),today=todayISO();
+  const cards=S.cards.map(c=>{
+    const items=ex.filter(e=>e.cardId===c.id&&invoiceYM(e,c)===ym).sort((x,y)=>x.date<y.date?1:-1);
+    const closeYM=c.dueDay>c.closeDay?ym:addMonths(ym,-1),closeDate=closeYM+'-'+pad(Math.min(c.closeDay,28));
+    const closed=today>closeDate;
+    return `<section class="card"><div class="head"><h2>${esc(c.name)}${c.demo?' <span class="sub">· exemplo</span>':''}</h2><button class="icon-btn" data-act="edit-card" data-id="${c.id}" aria-label="Editar cartão">${ic('edit')}</button></div>
+      <span class="num" style="font:600 1.7rem var(--font-d)">${brl(sum(items,e=>e.amount))}</span>
+      <span class="sub">Cartão de ${esc(N(c.holder))} · vence dia ${c.dueDay} · <span class="pill ${closed?'':'warn'}">${closed?'Fatura fechada':'Aberta, fecha em '+esc(shortDate(closeDate))}</span></span>
+      <ul class="list">${items.map(expRow).join('')||'<li class="empty">Nenhuma compra nesta fatura.</li>'}</ul></section>`}).join('');
+  const tot=sum(ex,e=>{const c=cardOf(e);return c&&invoiceYM(e,c)===ym?e.amount:0});
+  return head('Cartões',monthNav()+`<button class="btn primary" data-act="new-card">Novo cartão</button>`)+(S.cards.length?`
+  <section class="card tile"><span class="label">Faturas com vencimento em ${esc(monthLabel(ym))}</span><span class="num">${brl(tot)}</span></section>${cards}
+  <p class="sub">Ao lançar uma despesa, escolha o cartão em "Forma de pagamento". A compra entra na fatura conforme o dia de fechamento, e as parcelas caem uma em cada fatura. Os gastos individuais do outro não aparecem aqui.</p>`:
+  `<section class="card"><p class="empty">Nenhum cartão cadastrado. Cadastre o nome, o dia de fechamento e o dia de vencimento para acompanhar as faturas.</p></section>`);
+}
+function vFuturo(){
+  const me=S.me,who=ui.fut,cur=curYM(),ex=S.expenses.filter(visible);
+  const mineShare=me==='a'?S.defaultShareA:100-S.defaultShareA;
+  const val=e=>who==='casal'?(e.scope==='casal'?e.amount:0):(e.scope==='casal'?shareOf(e,me):e.scope===me?e.amount:0);
+  const billVal=b=>{const sc=billScope(b);return who==='casal'?(sc==='casal'?b.amount:0):(sc==='casal'?Math.round(b.amount*mineShare/100):sc===me?b.amount:0)};
+  const rows=[];
+  for(let i=0;i<6;i++){const m=addMonths(cur,i);let direct=0,card=0;
+    for(const e of ex){const v=val(e);if(!v) continue;const c=cardOf(e);if(c){if(invoiceYM(e,c)===m) card+=v}else if(e.date.slice(0,7)===m) direct+=v}
+    const bills=sum(S.bills.filter(b=>!S.expenses.some(e=>e.billId===b.id&&e.ym===m)),billVal);
+    rows.push({m,direct,card,bills,tot:direct+card+bills})}
+  const max=Math.max(1,...rows.map(r=>r.tot));
+  const lim=who==='casal'?sum(Object.values(S.budgets.casal||{}),v=>v):0;
+  const html=rows.map((r,i)=>{
+    const parts=[[i?'Parcelas e lançamentos':'Já lançado',r.direct],['Faturas de cartão',r.card],['Contas fixas a pagar',r.bills]].filter(p=>p[1]).map(p=>p[0]+' '+brl(p[1])).join(' · ');
+    const note=lim?(r.tot>lim?`<span class="pill crit">Passa ${brl(r.tot-lim)} dos limites</span>`:`<span class="pill">Sobram ${brl(lim-r.tot)} dos limites</span>`):'';
+    return `<div class="hbar"><span><strong>${esc(cap(monthLabel(r.m)))}</strong>${i?'':' <span class="sub">· mês atual</span>'}</span><span class="amt">${brl(r.tot)}</span><div class="track"><i style="width:${r.tot/max*100}%"></i></div><span class="sub" style="grid-column:1/-1">${parts||'Nada previsto ainda'} ${note}</span></div>`}).join('');
+  return head('Próximos meses')+subTabs('fut',[['casal','Casal'],['eu','Só '+N(me)]])+`
+  <section class="grid g2"><div class="card tile"><span class="label">Este mês</span><span class="num">${brl(rows[0].tot)}</span></div><div class="card tile"><span class="label">Mês que vem, já comprometido</span><span class="num">${brl(rows[1].tot)}</span></div></section>
+  <section class="card"><h2>${who==='casal'?'O que vem pela frente para o casal':'O que vem pela frente para você'}</h2>${html}
+  <p class="sub">Soma o que já está lançado em cada mês (inclusive parcelas futuras), as faturas de cartão pelo mês do vencimento e as contas fixas ainda não pagas. ${who==='casal'?'':'Em "Só '+esc(N(me))+'" entram a sua parte nas despesas do casal e os seus gastos individuais. '}Gastos do dia a dia que ainda não foram lançados não entram.</p></section>`;
+}
+const cap=t=>t.charAt(0).toUpperCase()+t.slice(1);
+const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function vAno(){
+  const y=ui.year,me=S.me,who=ui.anoWho,cur=curYM();
+  const ex=S.expenses.filter(e=>e.date.slice(0,4)===String(y)&&visible(e)&&(who==='casal'?e.scope==='casal':(e.scope==='casal'||e.scope===me)));
+  const val=e=>who==='casal'?e.amount:(e.scope==='casal'?shareOf(e,me):e.amount);
+  const months=MES.map((l,i)=>{const ym=y+'-'+pad(i+1),list=ex.filter(e=>e.date.slice(0,7)===ym);
+    return {l,ym,a:who==='casal'?sum(list,e=>shareOf(e,'a')):0,b:who==='casal'?sum(list,e=>shareOf(e,'b')):0,t:sum(list,val)}});
+  const tot=sum(months,m=>m.t),used=months.filter(m=>m.t&&m.ym<=cur).length||months.filter(m=>m.t).length;
+  const top=months.reduce((x,m)=>m.t>x.t?m:x,months[0]),max=Math.max(1,top.t);
+  const bars=months.map(m=>`<div class="col" title="${esc(m.l)}: ${brl(m.t)}"><div class="stack">${who==='casal'?`<span class="sb" style="height:${Math.round(m.b/max*180)}px"></span><span class="sa" style="height:${Math.round(m.a/max*180)}px"></span>`:`<span class="sm" style="height:${Math.round(m.t/max*180)}px"></span>`}</div></div>`).join('');
+  const cats=[...new Set(ex.map(e=>e.cat))].map(c=>({c,v:sum(ex.filter(e=>e.cat===c),val)})).filter(x=>x.v).sort((x,z)=>z.v-x.v);
+  const cmax=Math.max(1,...cats.map(c=>c.v));
+  const savOwner=who==='casal'?'casal':me,sav=sum(S.savings.filter(g=>g.owner===savOwner),g=>sum(g.moves.filter(m=>m.date.slice(0,4)===String(y)),m=>m.amount));
+  const table=months.filter(m=>m.t).map(m=>`<li class="row"><span>${esc(cap(monthLabel(m.ym)))}</span><span class="amt">${brl(m.t)}</span></li>`).join('');
+  return head('Visão do ano',`<div class="month"><button class="icon-btn" data-act="year" data-n="-1" aria-label="Ano anterior">${ic('prev')}</button><b>${y}</b><button class="icon-btn" data-act="year" data-n="1" aria-label="Próximo ano">${ic('next')}</button></div>`)+subTabs('anoWho',[['casal','Casal'],['eu','Só '+N(me)]])+(tot?`
+  <section class="grid g3"><div class="card tile"><span class="label">${who==='casal'?'Gasto do casal em ':'Seu custo em '}${y}</span><span class="num">${brl(tot)}</span></div>
+    <div class="card tile"><span class="label">Média por mês</span><span class="num">${brl(Math.round(tot/Math.max(1,used)))}</span><span class="sub">${used} ${used===1?'mês com lançamentos':'meses com lançamentos'}</span></div>
+    <div class="card tile"><span class="label">Mês mais caro</span><span class="num">${esc(cap(monthLabel(top.ym,true)))}</span><span class="sub">${brl(top.t)}</span></div></section>
+  <section class="grid g2">
+    <div class="card"><h2>Mês a mês</h2>${who==='casal'?`<div class="legend"><span><i class="dot a"></i>${esc(N('a'))}</span><span><i class="dot b"></i>${esc(N('b'))}</span></div>`:''}
+      <div class="bars y12" style="height:200px">${bars}</div><div class="bar-labels y12">${months.map(m=>`<span>${m.l}</span>`).join('')}</div>
+      <ul class="list">${table}</ul></div>
+    <div class="card"><h2>Para onde foi o dinheiro</h2>${cats.map(c=>`<div class="cat-row"><span><strong>${esc(c.c)}</strong></span><span class="sub">${brl(c.v)} · ${Math.round(c.v/tot*100)}%</span><div class="track"><i style="width:${c.v/cmax*100}%"></i></div></div>`).join('')}
+      <p class="sub">${who==='casal'?'Reservas do casal':'Suas reservas'} em ${y}: ${sav<0?'saíram '+brl(-sav):'entraram '+brl(sav)}, já descontadas as retiradas.</p></div>
+  </section>`:`<section class="card"><p class="empty">Nenhuma despesa lançada em ${y}.</p></section>`);
+}
+
 const shareLabel=()=>`<span class="pa">${esc(N('a'))} ${S.defaultShareA}%</span> · <span class="pb">${esc(N('b'))} ${100-S.defaultShareA}%</span>. Dá para mudar em cada despesa.`;
 function vAjustes(){
   return head('Ajustes')+(window.syncCard?window.syncCard():'')+`
@@ -854,6 +981,13 @@ function vAjustes(){
   <section class="card"><h2>Divisão padrão das despesas do casal</h2>
     <input type="range" id="s-share" min="0" max="100" step="5" value="${S.defaultShareA}" aria-label="Parte da pessoa 1">
     <p class="sub" id="s-share-l">${shareLabel()}</p></section>
+  <section class="card"><h2>Desenhos do seu perfil</h2>
+    <p class="sub">Aparecem no fundo, no topo das telas e ao lado do seu nome, na sua cor. Cada um escolhe o seu: aqui você muda o de ${esc(N(S.me))}.</p>
+    <div class="chips">${Object.keys(THEMES).map(k=>`<button class="chip" data-act="deco" data-v="${k}" aria-pressed="${S.deco[S.me]===k}">${THEMES[k].shape?themeIcon(k,S.me):''}${THEMES[k].label}</button>`).join('')}</div></section>
+  <section class="card"><h2>Categorias</h2>
+    <p class="sub">Valem para os dois. Ao remover uma categoria, as despesas já lançadas nela continuam como estão.</p>
+    <div class="chips">${CATS.map(c=>`<span class="chip cat-chip">${esc(c)}<button class="icon-btn" data-act="del-cat" data-c="${esc(c)}" aria-label="Remover ${esc(c)}">×</button></span>`).join('')}</div>
+    <div class="toolbar"><input type="text" id="s-newcat" maxlength="24" placeholder="Nova categoria" aria-label="Nova categoria" style="max-width:260px"><button class="btn" data-act="add-cat">Adicionar</button></div></section>
   <section class="card"><h2>PIN de cada um</h2>
     <p class="sub">Para trocar de pessoa, toque no botão com o seu nome, no topo. Com PIN, o app abre perguntando quem está usando, e entrar em um perfil pede o PIN da pessoa. Cada um cria o próprio. É uma barreira de uso no aparelho: os dados continuam guardados nele sem criptografia.</p>
     <ul class="list">${['a','b'].map(p=>`<li class="row"><div><strong>${esc(N(p))}</strong><span class="sub">${S.pins[p]?'PIN criado':'Sem PIN'}</span></div><span class="acts" style="gap:8px;flex-wrap:wrap;justify-content:flex-end">${p===S.me?(S.pins[p]?`<button class="btn small" data-act="set-pin">Trocar PIN</button><button class="btn small ghost" data-act="remove-pin">Remover</button>`:`<button class="btn small primary" data-act="set-pin">Criar PIN</button>`):`<span class="sub">Só ${esc(N(p))} altera</span>`}</span></li>`).join('')}</ul></section>
@@ -862,14 +996,14 @@ function vAjustes(){
     <div class="field"><label class="label" for="s-remind">Avisar das contas fixas com quantos dias de antecedência</label><select id="s-remind" style="max-width:220px">${[3,5,7,10,15].map(n=>`<option value="${n}" ${S.remindDays===n?'selected':''}>${n} dias</option>`).join('')}</select></div>
     <p class="sub">Nesta versão os avisos aparecem na aba Casal e como um número no menu. A notificação no tablet e nos celulares depende do app instalado e entra na próxima etapa.</p></section>
   <section class="card"><h2>Seus dados</h2>
-    <p class="sub">${STANDALONE?'Os dados ficam guardados só neste aparelho'+(storageOK?'':' (e o navegador não está deixando gravar, então eles somem ao fechar)')+'. Ainda não há sincronização entre o tablet e os celulares, então cada aparelho tem os seus próprios dados. Faça um backup de tempos em tempos: se o app for desinstalado ou os dados do navegador forem apagados, só o backup recupera.':'Esta é a versão de teste dentro do Claude: tudo fica guardado só neste navegador'+(storageOK?'':' (e ele não está deixando gravar, então os dados somem ao fechar)')+'. Use para avaliar as telas, sem lançar ainda os dados definitivos.'}</p>
+    <p class="sub">${STANDALONE?'Os dados ficam guardados só neste aparelho'+(storageOK?'':' (e o navegador não está deixando gravar, então eles somem ao fechar)')+'. '+(window.syncConnected&&window.syncConnected()?'Com a sincronização ligada, eles também ficam na nuvem do casal.':'Sem a sincronização ligada, cada aparelho tem os seus próprios dados.')+' Faça um backup de tempos em tempos: se o app for desinstalado ou os dados do navegador forem apagados, só o backup recupera.':'Esta é a versão de teste dentro do Claude: tudo fica guardado só neste navegador'+(storageOK?'':' (e ele não está deixando gravar, então os dados somem ao fechar)')+'. Use para avaliar as telas, sem lançar ainda os dados definitivos.'}</p>
     <div class="toolbar"><button class="btn need-save" data-act="backup" hidden>Fazer backup</button><label class="btn" for="s-restore">Restaurar backup</label><input type="file" id="s-restore" accept=".json,application/json" hidden><button class="btn need-save" data-act="csv" hidden>Exportar despesas (planilha CSV)</button></div>
-    <p class="sub">O backup leva lançamentos, contas, reservas, listas e inventário. Os arquivos do cofre de documentos não entram no backup.</p>
+    <p class="sub">O backup leva lançamentos, contas, cartões, categorias, reservas, listas e inventário. Os arquivos do cofre de documentos não entram no backup.</p>
     <div class="toolbar">${hasDemo()?`<button class="btn" data-act="clear-demo">Apagar exemplos</button>`:''}<button class="btn danger" data-act="reset">Apagar tudo</button></div></section>`;
 }
 
 function vMais(){
-  const items=[['listas','listas','Listas','Mercado e compras para a casa'],['documentos','documentos','Documentos','Cofre de notas e contratos, e inventário da casa'],['fechamento','check','Fechamento do mês','Resumo do mês e acerto entre vocês'],['ajustes','ajustes','Ajustes','Sincronização, nomes, PIN, lembretes e backup']];
+  const items=[['listas','listas','Listas','Mercado e compras para a casa'],['documentos','documentos','Documentos','Cofre de notas e contratos, e inventário da casa'],['fechamento','check','Fechamento do mês','Resumo do mês e acerto entre vocês'],['cartoes','card','Cartões','Faturas e compras no crédito'],['futuro','ahead','Próximos meses','O que já está comprometido pela frente'],['ano','chart','Visão do ano','Total, média por mês e categorias'],['ajustes','ajustes','Ajustes','Sincronização, nomes, categorias, desenhos, PIN e backup']];
   const dark=isDark();
   return head('Mais')+`<section class="grid g2">${items.map(([v,icn,t,d])=>`<button class="card more" data-act="go" data-v="${v}"><span class="q-ic">${ic(icn)}</span><span><strong>${t}</strong><span class="sub">${d}</span></span></button>`).join('')}${STANDALONE?`<button class="card more" data-act="theme"><span class="q-ic">${ic(dark?'sun':'moon')}</span><span><strong>${dark?'Usar modo claro':'Usar modo escuro'}</strong><span class="sub">Troca a aparência do app neste aparelho</span></span></button>`:''}</section>
   <div class="head"><span class="sub">Versão ${esc(APP_VERSION)}</span>${STANDALONE?`<button class="btn small" data-act="update">Buscar atualização</button>`:''}</div>`;
@@ -903,7 +1037,7 @@ function vLock(){
   <div class="grid g2">${cards}</div>
   <p class="sub" style="max-width:480px">${sp?`Este aparelho está conectado na conta de ${esc(N(sp))}. Para ${esc(N(sp==='a'?'b':'a'))} usar aqui, toque no nome e entre com a conta Google correspondente.`:'Toque no seu nome para entrar. Cada um pode criar um PIN em Mais, Ajustes.'}</p></section>`;
 }
-const RENDER={mais:vMais,casal:vCasal,fechamento:vFechamento,individual:vIndividual,despesas:vDespesas,contas:vContas,listas:vListas,documentos:vDocumentos,ajustes:vAjustes};
+const RENDER={cartoes:vCartoes,futuro:vFuturo,ano:vAno,mais:vMais,casal:vCasal,fechamento:vFechamento,individual:vIndividual,despesas:vDespesas,contas:vContas,listas:vListas,documentos:vDocumentos,ajustes:vAjustes};
 // no app instalado o tema é escolha de vocês (claro por padrão); dentro do Claude segue o tema do Claude
 function applyTheme(){
   if(!STANDALONE) return;
@@ -914,7 +1048,7 @@ function applyTheme(){
 }
 const isDark=()=>{const t=S.theme||'claro';return t==='escuro'||(t==='auto'&&!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))};
 function render(){
-  document.body.dataset.me=S.me;applyTheme();
+  document.body.dataset.me=S.me;CATS=S.cats;applyTheme();setPattern();
   const setup=!S.setupDone;
   document.body.classList.toggle('locked',locked||setup);
   if(setup){freeUrls();$('#main').innerHTML=vSetup();return}
@@ -954,7 +1088,7 @@ function confirmDlg(title,text,label,fn){openDlg(title,`<p>${esc(text)}</p>`,lab
 const seg=(name,opts,val)=>`<div class="seg">${opts.map(([v,l])=>`<label><input type="radio" name="${name}" value="${v}" ${v===val?'checked':''}><span>${esc(l)}</span></label>`).join('')}</div>`;
 const people=()=>[['a',N('a')],['b',N('b')]];
 
-const SCAN_PROMPT='A imagem é a foto de uma nota ou cupom fiscal brasileiro. Leia o valor total pago, o nome do estabelecimento e a data da compra. Responda só com um objeto JSON neste formato: {"total": 123.45, "loja": "nome curto do estabelecimento", "data": "AAAA-MM-DD", "categoria": "uma destas: '+CATS.join(', ')+'"}. Use ponto como separador decimal em "total". Se a data não estiver legível, use null. Se a imagem não for uma nota legível, responda {"erro": "motivo curto"}.';
+const scanPrompt=()=>'A imagem é a foto de uma nota ou cupom fiscal brasileiro. Leia o valor total pago, o nome do estabelecimento e a data da compra. Responda só com um objeto JSON neste formato: {"total": 123.45, "loja": "nome curto do estabelecimento", "data": "AAAA-MM-DD", "categoria": "uma destas: '+CATS.join(', ')+'"}. Use ponto como separador decimal em "total". Se a data não estiver legível, use null. Se a imagem não for uma nota legível, responda {"erro": "motivo curto"}.';
 // última categoria usada neste aparelho, para já vir marcada no próximo lançamento
 const UIKEY='contaadois.ui';
 function uiPref(){try{return JSON.parse(localStorage.getItem(UIKEY))||{}}catch(e){return {}}}
@@ -981,8 +1115,9 @@ function expDialog(e,scope,preset){
     <div class="two"><div class="field"><label class="label" for="e-amount">Valor${isNew?' total':''} (R$)</label><input type="text" inputmode="decimal" id="e-amount" name="amount" placeholder="0,00" value="${moneyInput(e.amount)}" autocomplete="off"></div>
     <div class="field"><label class="label" for="e-date">Data</label><input type="date" id="e-date" name="date" value="${e.date}"></div></div>
     <div class="field"><label class="label" for="e-desc">Descrição</label><input type="text" id="e-desc" name="desc" maxlength="80" value="${esc(e.desc)}" placeholder="Ex.: mercado da semana" autocomplete="off">${isNew?'<div class="sug" id="e-sug" aria-label="Sugestões de lançamentos anteriores"></div>':''}</div>
-    <div class="two"><div class="field"><label class="label" for="e-cat">Categoria</label><select id="e-cat" name="cat">${CATS.map(c=>`<option ${c===e.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+    <div class="two"><div class="field"><label class="label" for="e-cat">Categoria</label><select id="e-cat" name="cat">${catOpts(e.cat)}</select></div>
     ${isNew?`<div class="field"><label class="label" for="e-inst">Parcelas</label><select id="e-inst" name="inst">${[1,2,3,4,5,6,8,10,12,18,24].map(n=>`<option value="${n}">${n===1?'À vista':n+' vezes'}</option>`).join('')}</select></div>`:'<div></div>'}</div>
+    ${S.cards.length?`<div class="field"><label class="label" for="e-card">Forma de pagamento</label><select id="e-card" name="cardId"><option value="">Dinheiro, Pix ou débito</option>${S.cards.map(c=>`<option value="${c.id}" ${c.id===e.cardId?'selected':''}>Crédito: ${esc(c.name)}</option>`).join('')}</select></div>`:''}
     <div class="field"><span class="label">Quem pagou</span>${seg('payer',people(),e.payer)}</div>
     <div class="field"><span class="label">De quem é a despesa</span>${seg('scope',[['casal','Do casal'],['a','Só '+N('a')],['b','Só '+N('b')]],e.scope)}</div>
     <div class="field" id="e-split"><label class="label" for="e-share">Divisão</label><input type="range" id="e-share" name="shareA" min="0" max="100" step="5" value="${e.shareA}"><span class="sub" id="e-share-l"></span></div>
@@ -995,15 +1130,16 @@ function expDialog(e,scope,preset){
     if(!desc) return 'Dê uma descrição para a despesa.';
     if(!fd.get('date')) return 'Escolha a data.';
     const data={date:fd.get('date'),desc,amount,cat:fd.get('cat'),payer:fd.get('payer'),scope:fd.get('scope'),shareA:Number(fd.get('shareA'))};
+    const cardId=fd.get('cardId')||'';
     setUiPref({lastCat:data.cat});
     if(isNew){
       const n=Number(fd.get('inst'))||1,parts=installments(amount,n),group=n>1?uid():undefined;
       let docId;
       const f0=fd.get('file'),f=(f0&&f0.size)?f0:scanFile;
       if(f&&f.size){const r=await addDoc(f,{name:'Comprovante: '+desc,folder:'Notas fiscais',tags:[],expiry:'',priv:data.scope!=='casal'&&data.scope===data.payer?data.scope:''});if(typeof r==='string') return r;docId=r.id}
-      parts.forEach((v,i)=>{const ne={id:uid(),...data,amount:v,date:shiftDate(data.date,i)};if(n>1){ne.desc=desc+' ('+(i+1)+'/'+n+')';ne.group=group}if(docId) ne.docId=docId;S.expenses.push(ne)});
-    }else{Object.assign(e,data);delete e.demo}
-    ui.ym=data.date.slice(0,7);return null;
+      parts.forEach((v,i)=>{const ne={id:uid(),...data,amount:v,date:shiftDate(data.date,i)};if(n>1){ne.desc=desc+' ('+(i+1)+'/'+n+')';ne.group=group}if(docId) ne.docId=docId;if(cardId) ne.cardId=cardId;S.expenses.push(ne)});
+    }else{Object.assign(e,data);if(cardId) e.cardId=cardId;else if(fd.has('cardId')) delete e.cardId;delete e.demo}
+    if(!['cartoes','futuro','ano'].includes(ui.view)) ui.ym=data.date.slice(0,7);return null;
   });
   const upd=()=>{const f=$('#dlg-form');const sc=f.elements.scope.value;$('#e-split').hidden=sc!=='casal';const sh=Number(f.elements.shareA.value),amt=parseMoney(f.elements.amount.value)||0;const a=Math.round(amt*sh/100);
     $('#e-share-l').innerHTML=`<span class="pa">${esc(N('a'))} ${sh}%${amt?' ('+brl(a)+')':''}</span> · <span class="pb">${esc(N('b'))} ${100-sh}%${amt?' ('+brl(amt-a)+')':''}</span>`;
@@ -1030,7 +1166,7 @@ function expDialog(e,scope,preset){
       const f=sc.files[0],l=$('#e-scan-l');if(!f) return;
       l.textContent='Lendo a nota. Pode levar até um minuto.';
       try{
-        const r=await sample.json(SCAN_PROMPT,{images:[f]});
+        const r=await sample.json(scanPrompt(),{images:[f]});
         if(!sc.isConnected) return;
         const total=r&&!r.erro?Math.round(Number(r.total)*100):0;
         if(!(total>0)){l.textContent='Não consegui ler essa foto. Tente outra mais nítida ou preencha à mão.';return}
@@ -1077,24 +1213,26 @@ function settleDialog(){
   'Registrar',fd=>{const amount=parseMoney(fd.get('amount'));if(!amount) return 'Informe o valor do acerto.';if(!fd.get('date')) return 'Escolha a data.';const f=fd.get('from');S.settlements.push({id:uid(),date:fd.get('date'),from:f,to:other(f),amount});return null});
 }
 function billDialog(b){
-  const isNew=!b;b=b||{name:'',amount:0,dueDay:10,cat:'Contas da casa'};
+  const isNew=!b;b=b||{name:'',amount:0,dueDay:10,cat:CATS.includes('Contas da casa')?'Contas da casa':CATS[0],scope:ui.billScope||'casal'};
   openDlg(isNew?'Nova conta fixa':'Editar conta fixa',`
     <div class="field"><label class="label" for="b-name">Nome</label><input type="text" id="b-name" name="name" maxlength="60" value="${esc(b.name)}" placeholder="Ex.: condomínio"></div>
     <div class="two"><div class="field"><label class="label" for="b-amount">Valor previsto (R$)</label><input type="text" inputmode="decimal" id="b-amount" name="amount" value="${moneyInput(b.amount)}"></div>
     <div class="field"><label class="label" for="b-day">Dia do vencimento</label><input type="number" id="b-day" name="dueDay" min="1" max="31" value="${b.dueDay}"></div></div>
-    <div class="field"><label class="label" for="b-cat">Categoria</label><select id="b-cat" name="cat">${CATS.map(c=>`<option ${c===b.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></div>${isNew?'':`<div><button type="button" class="btn small ghost del" data-act="del-bill" data-id="${b.id}">Excluir conta fixa</button></div>`}`,
+    <div class="field"><label class="label" for="b-cat">Categoria</label><select id="b-cat" name="cat">${catOpts(b.cat)}</select></div>
+    <div class="field"><span class="label">De quem é a conta</span>${seg('scope',[['casal','Do casal'],[S.me,'Só minha']],billScope(b))}</div>${isNew?'':`<div><button type="button" class="btn small ghost del" data-act="del-bill" data-id="${b.id}">Excluir conta fixa</button></div>`}`,
   'Salvar',fd=>{const amount=parseMoney(fd.get('amount')),name=String(fd.get('name')).trim(),day=Number(fd.get('dueDay'));
     if(!name) return 'Dê um nome para a conta.';if(!amount) return 'Informe o valor previsto.';if(!(day>=1&&day<=31)) return 'O dia do vencimento vai de 1 a 31.';
-    const data={name,amount,dueDay:Math.round(day),cat:fd.get('cat')};
+    const data={name,amount,dueDay:Math.round(day),cat:fd.get('cat'),scope:fd.get('scope')||'casal'};
     if(isNew) S.bills.push({id:uid(),...data});else{Object.assign(b,data);delete b.demo}return null});
 }
 function payDialog(b){
   const cur=ui.ym===curYM();
-  openDlg('Pagar '+b.name,`<div class="field"><span class="label">Quem pagou</span>${seg('payer',people(),S.me)}</div>
+  const ind=billScope(b)!=='casal';
+  openDlg('Pagar '+b.name,`${ind?'<p class="sub">Conta só sua: entra nos seus gastos individuais.</p>':`<div class="field"><span class="label">Quem pagou</span>${seg('payer',people(),S.me)}</div>`}
     <div class="two"><div class="field"><label class="label" for="p-amount">Valor pago (R$)</label><input type="text" inputmode="decimal" id="p-amount" name="amount" value="${moneyInput(b.amount)}"></div>
     <div class="field"><label class="label" for="p-date">Data</label><input type="date" id="p-date" name="date" value="${cur?todayISO():ui.ym+'-'+pad(Math.min(b.dueDay,28))}"></div></div>`,
   'Marcar como paga',fd=>{const amount=parseMoney(fd.get('amount'));if(!amount) return 'Informe o valor pago.';if(!fd.get('date')) return 'Escolha a data.';
-    S.expenses.push({id:uid(),date:fd.get('date'),desc:b.name,amount,cat:b.cat,payer:fd.get('payer'),scope:'casal',shareA:S.defaultShareA,billId:b.id,ym:ui.ym});return null});
+    S.expenses.push({id:uid(),date:fd.get('date'),desc:b.name,amount,cat:b.cat,payer:ind?b.scope:fd.get('payer'),scope:ind?b.scope:'casal',shareA:S.defaultShareA,billId:b.id,ym:ui.ym});return null});
 }
 function budgetsDialog(owner){
   const b=S.budgets[owner]||(S.budgets[owner]={});
@@ -1120,6 +1258,28 @@ function moveDialog(g){
   'Registrar',fd=>{const amount=parseMoney(fd.get('amount'));if(!amount) return 'Informe o valor.';const out=fd.get('kind')==='out';
     if(out&&amount>savedOf(g)) return 'A retirada passa do que está guardado ('+brl(savedOf(g))+').';
     g.moves.push({date:todayISO(),amount:out?-amount:amount,by:g.owner==='casal'?fd.get('by'):g.owner});return null});
+}
+function histDialog(g){
+  const rows=g.moves.map((m,i)=>({m,i})).sort((x,y)=>x.m.date<y.m.date?1:x.m.date>y.m.date?-1:y.i-x.i);
+  let run=savedOf(g);
+  const html=rows.map(({m,i})=>{const after=run;run-=m.amount;
+    return `<li class="row x"><span class="cat-ic">${ic(m.amount<0?'swap':'piggy')}</span><div><strong>${m.amount<0?'Retirada':'Guardado'}${g.owner==='casal'?' · '+esc(N(m.by)):''}</strong><span class="sub">${esc(shortDate(m.date))} · ficou em ${brl(after)}</span></div><div class="amt-col"><span class="amt">${m.amount<0?'− ':'+ '}${brl(Math.abs(m.amount))}</span></div><button type="button" class="icon-btn" data-act="del-move" data-id="${g.id}" data-i="${i}" aria-label="Excluir movimento">${ic('del')}</button></li>`}).join('');
+  const ins=sum(g.moves.filter(m=>m.amount>0),m=>m.amount),outs=-sum(g.moves.filter(m=>m.amount<0),m=>m.amount);
+  openDlg('Histórico: '+g.name,`<p class="sub">Guardado hoje: <b>${brl(savedOf(g))}</b> · entradas ${brl(ins)} · retiradas ${brl(outs)}</p><ul class="list">${html||'<li class="empty">Nenhum movimento ainda.</li>'}</ul>`);
+}
+function cardDialog(c){
+  const isNew=!c;c=c||{name:'',closeDay:25,dueDay:5,holder:S.me};
+  openDlg(isNew?'Novo cartão':'Editar cartão',`
+    <div class="field"><label class="label" for="c-name">Nome do cartão</label><input type="text" id="c-name" name="name" maxlength="40" value="${esc(c.name)}" placeholder="Ex.: cartão roxo" autocomplete="off"></div>
+    <div class="two"><div class="field"><label class="label" for="c-close">Dia em que a fatura fecha</label><input type="number" id="c-close" name="closeDay" min="1" max="31" value="${c.closeDay}"></div>
+    <div class="field"><label class="label" for="c-due">Dia do vencimento</label><input type="number" id="c-due" name="dueDay" min="1" max="31" value="${c.dueDay}"></div></div>
+    <div class="field"><span class="label">De quem é o cartão</span>${seg('holder',people(),c.holder)}</div>
+    <p class="sub">Só o nome e as datas ficam guardados. Não coloque o número do cartão.</p>${isNew?'':`<div><button type="button" class="btn small ghost del" data-act="del-card" data-id="${c.id}">Excluir cartão</button></div>`}`,
+  'Salvar',fd=>{const name=String(fd.get('name')).trim(),cd=Number(fd.get('closeDay')),dd=Number(fd.get('dueDay'));
+    if(!name) return 'Dê um nome para o cartão.';if(/\d{6,}/.test(name.replace(/\s/g,''))) return 'Não use o número do cartão no nome.';
+    if(!(cd>=1&&cd<=31)||!(dd>=1&&dd<=31)) return 'Os dias vão de 1 a 31.';
+    const data={name,closeDay:Math.round(cd),dueDay:Math.round(dd),holder:fd.get('holder')};
+    if(isNew) S.cards.push({id:uid(),...data});else{Object.assign(c,data);delete c.demo}return null});
 }
 // O PIN é uma barreira de uso no aparelho, não criptografia: guarda-se só o resumo (hash) dele.
 async function pinHash(salt,pin){
@@ -1235,7 +1395,7 @@ function restoreBackup(file){
     if(!ok){toast('Esse arquivo não é um backup do Conta a Dois.');return}
     confirmDlg('Restaurar backup','Substituir todos os dados deste aparelho pelos do backup, com '+d.expenses.length+' despesas? Os dados atuais serão apagados.','Restaurar',()=>{
       if(!d.inventory) d.inventory=[];if(!d.remindDays) d.remindDays=5;if(!d.budgets) d.budgets={casal:{},a:{},b:{}};
-      if(!d.theme) d.theme=S.theme||'claro';if(!d.pins) d.pins={a:null,b:null};
+      if(!d.theme) d.theme=S.theme||'claro';if(!d.pins) d.pins={a:null,b:null};norm(d);
       S=d;
     });
   };
@@ -1269,7 +1429,7 @@ document.addEventListener('click',ev=>{
   if(a==='forgot-pin') return forgotPin(t.dataset.p);
   if(a==='new-exp') return expDialog(null,t.dataset.scope);
   if(a==='edit-exp') return expDialog(find('expenses',id));
-  if(a==='again-exp'){const e=find('expenses',id);dlg.close();return expDialog(null,null,{desc:baseDesc(e.desc),amount:e.amount,cat:e.cat,payer:e.payer,scope:e.scope,shareA:e.shareA})}
+  if(a==='again-exp'){const e=find('expenses',id);dlg.close();return expDialog(null,null,{desc:baseDesc(e.desc),amount:e.amount,cat:e.cat,payer:e.payer,scope:e.scope,shareA:e.shareA,cardId:e.cardId})}
   if(a==='del-exp'){const e=find('expenses',id);return confirmDlg('Excluir despesa','Excluir "'+e.desc+'" de '+brl(e.amount)+'? O saldo entre vocês é recalculado.'+(e.group?' As outras parcelas continuam lançadas.':''),'Excluir',()=>removeFrom('expenses',id))}
   if(a==='settle') return settleDialog();
   if(a==='del-settle') return confirmDlg('Excluir acerto','Excluir este acerto? O saldo volta ao que era antes dele.','Excluir',()=>removeFrom('settlements',id));
@@ -1283,6 +1443,21 @@ document.addEventListener('click',ev=>{
   if(a==='edit-sav') return savDialog(find('savings',id));
   if(a==='move-sav') return moveDialog(find('savings',id));
   if(a==='del-sav'){const g=find('savings',id);return confirmDlg('Excluir reserva','Excluir "'+g.name+'" e o histórico de '+brl(savedOf(g))+' guardados?','Excluir',()=>removeFrom('savings',id))}
+  if(a==='hist-sav') return histDialog(find('savings',id));
+  if(a==='del-move'){const g=find('savings',id);g.moves.splice(Number(t.dataset.i),1);save();render();return histDialog(g)}
+  if(a==='new-card') return cardDialog();
+  if(a==='edit-card') return cardDialog(find('cards',id));
+  if(a==='del-card'){const c=find('cards',id);return confirmDlg('Excluir cartão','Excluir "'+c.name+'"? As despesas lançadas nele continuam, sem o cartão.','Excluir',()=>{removeFrom('cards',id);S.expenses.forEach(e=>{if(e.cardId===id) delete e.cardId})})}
+  if(a==='year'){ui.year+=Number(t.dataset.n);render();return}
+  if(a==='deco'){S.deco[S.me]=t.dataset.v;save();render();return}
+  if(a==='add-cat'){const el=$('#s-newcat'),v=el.value.trim().replace(/\s+/g,' ');
+    if(!v){el.focus();return}
+    if(S.cats.some(c=>c.toLowerCase()===v.toLowerCase())){toast('Essa categoria já existe.');return}
+    if(S.cats.length>=30){toast('O limite é de 30 categorias.');return}
+    S.cats=[...S.cats,v];save();render();toast('Categoria "'+v+'" criada.');return}
+  if(a==='del-cat'){const c=t.dataset.c,n=S.expenses.filter(e=>e.cat===c).length;
+    if(S.cats.length<=1){toast('Deixe pelo menos uma categoria.');return}
+    return confirmDlg('Remover categoria','Remover "'+c+'" da lista?'+(n?' As '+n+' despesas já lançadas nela continuam com esse nome.':'')+' Os limites de orçamento dela são apagados.','Remover',()=>{S.cats=S.cats.filter(x=>x!==c);for(const o of ['casal','a','b']) if(S.budgets[o]) delete S.budgets[o][c]})}
   if(a==='list'){ui.list=id;render();return}
   if(a==='new-list') return listDialog();
   if(a==='del-item'){const L=curList();L.items=L.items.filter(i=>i.id!==id);save();render();return}
@@ -1298,8 +1473,8 @@ document.addEventListener('click',ev=>{
   if(a==='del-doc'){const d=find('docs',id);return confirmDlg('Excluir documento','Excluir "'+d.name+'" do cofre? Não dá para desfazer.','Excluir',()=>{removeFrom('docs',id);S.expenses.forEach(e=>{if(e.docId===id) delete e.docId});S.inventory.forEach(i=>{if(i.docId===id) i.docId=''});fileDel(id);if(window.vaultRemove) window.vaultRemove(id)})}
   if(a==='csv') return exportCsv();
   if(a==='backup') return exportBackup();
-  if(a==='clear-demo') return confirmDlg('Apagar exemplos','Apagar todos os itens de exemplo? O que vocês mesmos lançaram fica.','Apagar exemplos',()=>{['expenses','settlements','bills','savings','docs','inventory'].forEach(k=>S[k]=S[k].filter(x=>!x.demo));S.inventory.forEach(i=>{if(i.docId&&!S.docs.some(d=>d.id===i.docId)) i.docId=''});S.lists.forEach(l=>l.items=l.items.filter(i=>!i.demo));S.budgets={casal:{},a:{},b:{}}});
-  if(a==='reset') return confirmDlg('Apagar tudo',(window.syncConnected&&window.syncConnected()?'Este aparelho sai da sincronização e os dados dele são apagados. O que já foi sincronizado continua guardado na nuvem e nos outros aparelhos. ':'')+'Apagar todos os dados deste navegador, inclusive os documentos? Não dá para desfazer.','Apagar tudo',()=>{if(window.syncForget) window.syncForget();S.docs.forEach(d=>d.hasFile&&fileDel(d.id));const names=S.names,me=S.me,theme=S.theme;S=fresh(false);S.names=names;S.me=me;S.theme=theme});
+  if(a==='clear-demo') return confirmDlg('Apagar exemplos','Apagar todos os itens de exemplo? O que vocês mesmos lançaram fica.','Apagar exemplos',()=>{['expenses','settlements','bills','savings','docs','inventory','cards'].forEach(k=>S[k]=S[k].filter(x=>!x.demo));S.inventory.forEach(i=>{if(i.docId&&!S.docs.some(d=>d.id===i.docId)) i.docId=''});S.lists.forEach(l=>l.items=l.items.filter(i=>!i.demo));S.budgets={casal:{},a:{},b:{}}});
+  if(a==='reset') return confirmDlg('Apagar tudo',(window.syncConnected&&window.syncConnected()?'Este aparelho sai da sincronização e os dados dele são apagados. O que já foi sincronizado continua guardado na nuvem e nos outros aparelhos. ':'')+'Apagar todos os dados deste navegador, inclusive os documentos? Não dá para desfazer.','Apagar tudo',()=>{if(window.syncForget) window.syncForget();S.docs.forEach(d=>d.hasFile&&fileDel(d.id));const names=S.names,me=S.me,theme=S.theme,deco=S.deco;S=fresh(false);S.names=names;S.me=me;S.theme=theme;S.deco=deco});
 });
 document.addEventListener('keydown',ev=>{
   if((ev.key==='Enter'||ev.key===' ')&&ev.target.classList&&ev.target.classList.contains('tap')){ev.preventDefault();ev.target.click()}

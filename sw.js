@@ -1,5 +1,5 @@
 // Conta a Dois: guarda os arquivos do app para abrir sem internet. Os dados de vocês ficam no aparelho e não passam por aqui.
-const CACHE='conta-a-dois-54759966';
+const CACHE='conta-a-dois-3483239';
 const ASSETS=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png','fonts/outfit.woff2','fonts/plus-jakarta-sans.woff2','vendor/supabase.js','config.js','sync.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
