@@ -315,13 +315,31 @@ input[type=date]{-webkit-appearance:none;appearance:none}
   .btn{padding:10px 16px}
   .fab{width:56px;height:56px}
 }
+
+/* botão de perfil */
+.me-chip{display:flex;align-items:center;gap:10px;border:0;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:6px 16px 6px 6px;cursor:pointer;font-weight:600;min-height:48px;min-width:0;font-size:1rem}
+.me-chip:hover{filter:brightness(.97)}
+.me-chip .av,.who-card .av{width:36px;height:36px;border-radius:50%;background:var(--surface);display:grid;place-items:center;flex:none;overflow:hidden}
+.me-chip .av svg,.who-card .av svg{width:24px;height:24px;margin:0}
+.me-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me-sw{margin-left:auto;font-size:.82rem;color:var(--accent);padding-left:6px}
+.who-card .av{width:76px;height:76px}
+.who-card .av svg{width:46px;height:46px}
+.who-card.a .av{background:color-mix(in srgb,var(--pa) 10%,var(--surface))}
+.who-card.b .av{background:color-mix(in srgb,var(--pb-fill) 22%,var(--surface))}
+body.locked .me-chip{display:none}
+/* perfil vermelho: futebol */
+body[data-me="a"]{background-image:var(--balls);background-size:340px 340px}
+body[data-me="a"] .hero{background:linear-gradient(115deg,var(--surface) 52%,color-mix(in srgb,var(--pa) 13%,var(--surface)))}
+@media (max-width:860px){.me-chip{margin-left:auto}}
+@media (max-width:520px){.me-sw{display:none}.me-chip{padding-right:14px}}
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="rail">
     <div class="brand"><i></i>Conta a Dois</div>
-    <div class="who"><div class="who-head"><small>Usando como</small><button class="icon-btn" id="theme-btn" data-act="theme" hidden></button><button class="icon-btn" id="lock-btn" data-act="lock" aria-label="Bloquear o app" title="Bloquear" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button></div><div class="seg" id="who-seg"></div></div>
+    <button class="me-chip" id="me-chip" data-act="who" title="Trocar de pessoa"></button>
     <nav class="links" id="rail-nav" aria-label="Seções"></nav>
   </aside>
   <main id="main"></main>
@@ -377,7 +395,7 @@ function installments(total,n){const base=Math.floor(total/n);return Array.from(
 
 /* ---------- estado ---------- */
 const KEY='contaadois.v2';
-const APP_VERSION='25/11 21:36';
+const APP_VERSION='25/11 21:47';
 const UA=navigator.userAgent||'';
 const IS_SAMSUNG=/SamsungBrowser/i.test(UA);
 const BROWSER=(()=>{let m=UA.match(/SamsungBrowser\/(\d+)/);if(m) return 'Internet da Samsung '+m[1];m=UA.match(/Chrome\/(\d+)/);if(m) return 'Chrome '+m[1];m=UA.match(/Version\/(\d+).*Safari/);if(m) return 'Safari '+m[1];return 'outro navegador'})();
@@ -489,14 +507,14 @@ function seed(){
   seedInventory(S0);
 }
 function fresh(withDemo){
-  S0={v:2,names:{a:'Pessoa 1',b:'Pessoa 2'},me:'a',defaultShareA:50,expenses:[],settlements:[],bills:[],budgets:{casal:{},a:{},b:{}},savings:[],docs:[],inventory:[],remindDays:5,theme:'claro',pins:{a:null,b:null},
+  S0={v:2,setupDone:false,names:{a:'Pessoa 1',b:'Pessoa 2'},me:'a',defaultShareA:50,expenses:[],settlements:[],bills:[],budgets:{casal:{},a:{},b:{}},savings:[],docs:[],inventory:[],remindDays:5,theme:'claro',pins:{a:null,b:null},
       lists:[{id:'l-mercado',name:'Mercado',items:[]},{id:'l-casa',name:'Para a casa',items:[]}]};
   if(withDemo) seed();
   return S0;
 }
 function load(){
-  try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&s.v===2){if(!s.remindDays) s.remindDays=5;if(!s.theme) s.theme='claro';if(!s.pins) s.pins={a:null,b:null};{const fix={'Mercado':'l-mercado','Para a casa':'l-casa'};for(const l of s.lists){const f=fix[l.name];if(f&&l.id!==f&&!s.lists.some(x=>x.id===f)) l.id=f}}if(!s.inventory){s.inventory=[];if(s.docs.some(d=>d.demo)) seedInventory(s)}return s}}}catch(e){}
-  return fresh(true);
+  try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&s.v===2){if(s.setupDone===undefined) s.setupDone=true;if(!s.remindDays) s.remindDays=5;if(!s.theme) s.theme='claro';if(!s.pins) s.pins={a:null,b:null};{const fix={'Mercado':'l-mercado','Para a casa':'l-casa'};for(const l of s.lists){const f=fix[l.name];if(f&&l.id!==f&&!s.lists.some(x=>x.id===f)) l.id=f}}if(!s.inventory){s.inventory=[];if(s.docs.some(d=>d.demo)) seedInventory(s)}return s}}}catch(e){}
+  return fresh(false);
 }
 let storageOK=true;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){storageOK=false}if(window.onLocalSave) window.onLocalSave()}
@@ -538,7 +556,22 @@ function blossom(x,y,s,rot,fill,center='#F4C04E'){let p='';for(let k=0;k<5;k++) 
 const leaf=(x,y,r,s=1)=>`<ellipse cx="${x}" cy="${y}" rx="${7*s}" ry="${17*s}" transform="rotate(${r} ${x} ${y})" fill="#8FC39B"/>`;
 const FLOWERS=`<svg viewBox="0 0 280 210" xmlns="http://www.w3.org/2000/svg">${leaf(160,128,42,1.25)}${leaf(222,160,-32,1.1)}${leaf(128,62,72)}${leaf(250,70,-52,1.1)}${blossom(202,76,2.2,10,'#F28DBD')}${blossom(128,118,1.5,40,'#F7B6D4')}${blossom(240,152,1.45,-15,'#E66AA6')}${blossom(150,36,1,20,'#E66AA6')}${blossom(84,160,.9,0,'#F28DBD')}${blossom(262,28,.8,30,'#F7B6D4')}</svg>`;
 const FLOWER_ICON=`<svg class="fl" viewBox="-24 -24 48 48" aria-hidden="true">${blossom(0,0,1.4,0,'currentColor')}</svg>`;
-const heroDeco=()=>S.me==='b'?`<div class="hero-deco" aria-hidden="true">${FLOWERS}</div>`:'';
+// bola de futebol genérica, em vermelho e branco, para o perfil vermelho
+let ballN=0;
+function ball(x,y,r,rot=0,c='#CF1B33'){
+  const pent=(cx,cy,rr,a0)=>{let d='';for(let k=0;k<5;k++){const a=(a0+k*72-90)*Math.PI/180;d+=(k?'L':'M')+(cx+rr*Math.cos(a)).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1)}return d+'Z'};
+  let patches=pent(0,0,r*.34,0),lines='';
+  for(let k=0;k<5;k++){const a=(k*72-90)*Math.PI/180,cs=Math.cos(a),sn=Math.sin(a);
+    lines+=`M${(r*.34*cs).toFixed(1)} ${(r*.34*sn).toFixed(1)}L${(r*.7*cs).toFixed(1)} ${(r*.7*sn).toFixed(1)}`;
+    patches+=pent(r*1.02*cs,r*1.02*sn,r*.38,k*72+180)}
+  const id='ball'+(++ballN);
+  return `<g transform="translate(${x} ${y}) rotate(${rot})"><clipPath id="${id}"><circle r="${r}"/></clipPath><circle r="${r}" fill="#fff"/><g clip-path="url(#${id})"><path d="${patches}" fill="${c}"/><path d="${lines}" stroke="${c}" stroke-width="${(r*.06).toFixed(1)}" fill="none"/></g><circle r="${r}" fill="none" stroke="${c}" stroke-width="${(r*.07).toFixed(1)}"/></g>`;
+}
+const BALLS=`<svg viewBox="0 0 280 210" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(-24 200 40)"><rect x="70" y="-6" width="320" height="15" rx="7" fill="#CF1B33"/><rect x="100" y="20" width="320" height="15" rx="7" fill="#F1B3BC"/><rect x="130" y="46" width="320" height="15" rx="7" fill="#CF1B33" opacity=".55"/></g>${ball(196,96,60,14)}${ball(108,150,25,-22)}${ball(250,176,17,35)}</svg>`;
+const BALL_ICON=`<svg class="fl" viewBox="-24 -24 48 48" aria-hidden="true">${ball(0,0,21,0)}</svg>`;
+const avatar=p=>p==='b'?FLOWER_ICON:BALL_ICON;
+const heroDeco=()=>`<div class="hero-deco" aria-hidden="true">${S.me==='b'?FLOWERS:BALLS}</div>`;
+try{document.documentElement.style.setProperty('--balls','url("data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="340" height="340" opacity=".13">${ball(60,70,15,10)}${ball(250,40,9,40)}${ball(180,190,12,-20)}${ball(40,270,9,5)}${ball(300,290,14,30)}</svg>`)+'")')}catch(e){}
 try{document.documentElement.style.setProperty('--petals','url("data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="340" height="340" opacity=".34">${blossom(60,70,.75,12,'#F7B6D4','#F9DC9A')}${blossom(250,40,.5,40,'#F7B6D4','#F9DC9A')}${blossom(180,190,.62,-20,'#F7B6D4','#F9DC9A')}${blossom(40,270,.5,5,'#F7B6D4','#F9DC9A')}${blossom(300,290,.7,30,'#F7B6D4','#F9DC9A')}</svg>`)+'")')}catch(e){}
 const subTabs=(k,opts)=>`<div class="tabs">${opts.map(([v,l])=>`<button class="tab" data-act="sub" data-k="${k}" data-v="${v}" aria-selected="${ui[k]===v}">${l}</button>`).join('')}</div>`;
 const quick=items=>`<div class="quick">${items.map(([act,attrs,icn,l])=>`<button class="q" data-act="${act}" ${attrs}><span class="q-ic">${ic(icn)}</span><span>${l}</span></button>`).join('')}</div>`;
@@ -691,8 +724,7 @@ function vIndividual(){
     <div class="hero-legend"><span>Sua parte no casal <b>${brl(part)}</b></span><span>Gastos individuais <b>${brl(ind)}</b></span></div>
     <div class="hero-foot"><span>${balLine}</span>${myBal?`<button class="btn small light" data-act="settle">Registrar acerto</button>`:''}</div>
   </section>
-  <section class="card"><h2>Seus gastos individuais no mês</h2><ul class="list">${rows}</ul></section>
-  <p class="sub">Só você vê esta aba. Quando o login estiver ligado, ${esc(N(o))} terá a dela e uma não aparece para o outro.</p>`;
+  <section class="card"><h2>Seus gastos individuais no mês</h2><ul class="list">${rows}</ul></section>`;
 }
 
 function expRows(){
@@ -800,15 +832,15 @@ const shareLabel=()=>`<span class="pa">${esc(N('a'))} ${S.defaultShareA}%</span>
 function vAjustes(){
   return head('Ajustes')+(window.syncCard?window.syncCard():'')+`
   <section class="card"><h2>Quem usa o app</h2><div class="two">
-    <div class="field"><label class="label" for="s-na"><i class="dot a"></i>Nome da pessoa 1</label><input type="text" id="s-na" maxlength="24" value="${esc(S.names.a)}"></div>
-    <div class="field"><label class="label" for="s-nb"><i class="dot b"></i>Nome da pessoa 2</label><input type="text" id="s-nb" maxlength="24" value="${esc(S.names.b)}"></div></div></section>
+    <div class="field"><label class="label" for="s-na"><i class="dot a"></i>Nome do perfil vermelho</label><input type="text" id="s-na" maxlength="24" value="${esc(S.names.a)}"></div>
+    <div class="field"><label class="label" for="s-nb"><i class="dot b"></i>Nome do perfil rosa</label><input type="text" id="s-nb" maxlength="24" value="${esc(S.names.b)}"></div></div></section>
   <section class="card"><h2>Divisão padrão das despesas do casal</h2>
     <input type="range" id="s-share" min="0" max="100" step="5" value="${S.defaultShareA}" aria-label="Parte da pessoa 1">
     <p class="sub" id="s-share-l">${shareLabel()}</p></section>
   <section class="card"><h2>PIN de cada um</h2>
-    <p class="sub">Com PIN, o app abre perguntando quem está usando, e trocar de perfil pede o PIN da pessoa. Cada um cria o próprio. É uma barreira de uso no aparelho: os dados continuam guardados nele sem criptografia.</p>
+    <p class="sub">Para trocar de pessoa, toque no botão com o seu nome, no topo. Com PIN, o app abre perguntando quem está usando, e entrar em um perfil pede o PIN da pessoa. Cada um cria o próprio. É uma barreira de uso no aparelho: os dados continuam guardados nele sem criptografia.</p>
     <ul class="list">${['a','b'].map(p=>`<li class="row"><div><strong>${esc(N(p))}</strong><span class="sub">${S.pins[p]?'PIN criado':'Sem PIN'}</span></div><span class="acts" style="gap:8px;flex-wrap:wrap;justify-content:flex-end">${p===S.me?(S.pins[p]?`<button class="btn small" data-act="set-pin">Trocar PIN</button><button class="btn small ghost" data-act="remove-pin">Remover</button>`:`<button class="btn small primary" data-act="set-pin">Criar PIN</button>`):`<span class="sub">Só ${esc(N(p))} altera</span>`}</span></li>`).join('')}</ul></section>
-  ${STANDALONE?`<section class="card"><h2>Aparência</h2>${seg('theme',[['claro','Claro'],['escuro','Escuro'],['auto','Seguir o aparelho']],S.theme||'claro')}</section>`:''}
+  ${STANDALONE?`<section class="card"><h2>Aparência</h2>${seg('theme',[['claro','Claro'],['escuro','Escuro']],isDark()?'escuro':'claro')}</section>`:''}
   <section class="card"><h2>Lembretes</h2>
     <div class="field"><label class="label" for="s-remind">Avisar das contas fixas com quantos dias de antecedência</label><select id="s-remind" style="max-width:220px">${[3,5,7,10,15].map(n=>`<option value="${n}" ${S.remindDays===n?'selected':''}>${n} dias</option>`).join('')}</select></div>
     <p class="sub">Nesta versão os avisos aparecem na aba Casal e como um número no menu. A notificação no tablet e nos celulares depende do app instalado e entra na próxima etapa.</p></section>
@@ -820,8 +852,9 @@ function vAjustes(){
 }
 
 function vMais(){
-  const items=[['listas','listas','Listas','Mercado e compras para a casa'],['documentos','documentos','Documentos','Cofre de notas e contratos, e o inventário da casa'],['fechamento','check','Fechamento do mês','Resumo do mês e acerto entre vocês'],['ajustes','ajustes','Ajustes','Nomes, PIN, aparência, lembretes e backup']];
-  return head('Mais')+`<section class="grid g2">${items.map(([v,icn,t,d])=>`<button class="card more" data-act="go" data-v="${v}"><span class="q-ic">${ic(icn)}</span><span><strong>${t}</strong><span class="sub">${d}</span></span></button>`).join('')}</section>
+  const items=[['listas','listas','Listas','Mercado e compras para a casa'],['documentos','documentos','Documentos','Cofre de notas e contratos, e o inventário da casa'],['fechamento','check','Fechamento do mês','Resumo do mês e acerto entre vocês'],['ajustes','ajustes','Ajustes','Sincronização, nomes, PIN, lembretes e backup']];
+  const dark=isDark();
+  return head('Mais')+`<section class="grid g2">${items.map(([v,icn,t,d])=>`<button class="card more" data-act="go" data-v="${v}"><span class="q-ic">${ic(icn)}</span><span><strong>${t}</strong><span class="sub">${d}</span></span></button>`).join('')}${STANDALONE?`<button class="card more" data-act="theme"><span class="q-ic">${ic(dark?'sun':'moon')}</span><span><strong>${dark?'Usar modo claro':'Usar modo escuro'}</strong><span class="sub">Troca a aparência do app neste aparelho</span></span></button>`:''}</section>
   <div class="head"><span class="sub">Versão ${esc(APP_VERSION)}</span>${STANDALONE?`<button class="btn small" data-act="update">Buscar atualização</button>`:''}</div>`;
 }
 // baixa a versão mais nova ignorando o que o navegador guardou, e recarrega
@@ -832,9 +865,26 @@ async function updateApp(){
     await Promise.all(['./','index.html'].map(u=>fetch(u,{cache:'reload'}).catch(()=>{})))}catch(e){}
   location.reload();
 }
+function vSetup(){
+  return `<section class="lock"><div class="brand"><i></i>Conta a Dois</div><h1>Vamos começar</h1>
+  <form id="setup-form" class="card" style="width:min(480px,100%);text-align:left" novalidate>
+    <p class="sub">Cada um tem um perfil com a sua cor. Dá para mudar os nomes depois, em Ajustes.</p>
+    <div class="field"><label class="label" for="su-a"><i class="dot a"></i>Nome de quem fica com o perfil vermelho</label><input type="text" id="su-a" maxlength="24" autocomplete="off"></div>
+    <div class="field"><label class="label" for="su-b"><i class="dot b"></i>Nome de quem fica com o perfil rosa</label><input type="text" id="su-b" maxlength="24" autocomplete="off"></div>
+    <div class="field"><span class="label">Quem está usando este aparelho agora?</span>${seg('su-me',[['a','Perfil vermelho'],['b','Perfil rosa']],'a')}</div>
+    <p class="err" id="su-err" hidden></p>
+    <button class="btn primary">Começar</button>
+    <button type="button" class="btn ghost small" data-act="setup-demo">Ver o app com dados de exemplo</button>
+  </form></section>`;
+}
 function vLock(){
+  const sp=window.syncPerson&&window.syncPerson();
+  const cards=['a','b'].map(p=>{
+    const other=sp&&p!==sp;
+    return `<button class="card who-card ${p}" data-act="${other?'sync-switch':'unlock'}" data-p="${p}"><span class="av">${avatar(p)}</span><strong>${esc(N(p))}</strong><span class="sub">${other?'Entrar com a conta Google de '+esc(N(p)):S.pins[p]?'Entrar com PIN':'Tocar para entrar'}</span></button>`}).join('');
   return `<section class="lock"><div class="brand"><i></i>Conta a Dois</div><h1>Quem está usando?</h1>
-  <div class="grid g2">${['a','b'].map(p=>`<button class="card who-card ${p}" data-act="unlock" data-p="${p}"><span class="q-ic">${p==='b'?FLOWER_ICON:ic('individual')}</span><strong>${esc(N(p))}</strong><span class="sub">${S.pins[p]?'Entrar com PIN':'Sem PIN'}</span></button>`).join('')}</div></section>`;
+  <div class="grid g2">${cards}</div>
+  <p class="sub" style="max-width:480px">${sp?`Este aparelho está conectado na conta de ${esc(N(sp))}. Para ${esc(N(sp==='a'?'b':'a'))} usar aqui, toque no nome e entre com a conta Google correspondente.`:'Toque no seu nome para entrar. Cada um pode criar um PIN em Mais, Ajustes.'}</p></section>`;
 }
 const RENDER={mais:vMais,casal:vCasal,fechamento:vFechamento,individual:vIndividual,despesas:vDespesas,contas:vContas,listas:vListas,documentos:vDocumentos,ajustes:vAjustes};
 // no app instalado o tema é escolha de vocês (claro por padrão); dentro do Claude segue o tema do Claude
@@ -848,15 +898,15 @@ function applyTheme(){
 const isDark=()=>{const t=S.theme||'claro';return t==='escuro'||(t==='auto'&&!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))};
 function render(){
   document.body.dataset.me=S.me;applyTheme();
-  document.body.classList.toggle('locked',locked);
+  const setup=!S.setupDone;
+  document.body.classList.toggle('locked',locked||setup);
+  if(setup){freeUrls();$('#main').innerHTML=vSetup();return}
   if(locked){freeUrls();$('#main').innerHTML=vLock();return}
-  $('#lock-btn').hidden=!(S.pins.a||S.pins.b);
-  $('#who-seg').hidden=!!(window.syncConnected&&window.syncConnected()); // com login, o perfil é o da conta
-  {const tb=$('#theme-btn'),dark=isDark();tb.hidden=!STANDALONE;tb.innerHTML=ic(dark?'sun':'moon');tb.setAttribute('aria-label',dark?'Mudar para o modo claro':'Mudar para o modo escuro');tb.title=dark?'Modo claro':'Modo escuro'}
   const nAl=alerts().length,cur=MORE.includes(ui.view)?'mais':ui.view;
   const navHtml=short=>VIEWS.map(k=>{const l=k==='individual'?N(S.me):(short?SHORT[k]:LABEL[k]);return `<button class="nav-btn" data-act="go" data-v="${k}" ${cur===k?'aria-current="page"':''}>${ic(k)}<span>${esc(l)}</span>${k==='casal'&&nAl?`<em class="badge" aria-label="${nAl} lembretes">${nAl}</em>`:''}</button>`}).join('');
   $('#rail-nav').innerHTML=navHtml(false);$('#tabbar').innerHTML=navHtml(true);
-  $('#who-seg').innerHTML=['a','b'].map(p=>`<label><input type="radio" name="who" value="${p}" ${S.me===p?'checked':''}><span>${p==='b'?FLOWER_ICON:'<i class="dot a"></i>'}${esc(N(p))}</span></label>`).join('');
+  $('#me-chip').innerHTML=`<span class="av">${avatar(S.me)}</span><span class="me-name">${esc(N(S.me))}</span><span class="me-sw">Trocar</span>`;
+  $('#me-chip').setAttribute('aria-label','Usando como '+N(S.me)+'. Trocar de pessoa');
   freeUrls();
   $('#main').innerHTML=RENDER[ui.view]();
   if(ui.view==='despesas'){$('#f-scope').value=ui.scope;$('#f-cat').value=ui.cat}
@@ -1135,7 +1185,8 @@ document.addEventListener('click',ev=>{
   if(a==='month'){ui.ym=addMonths(ui.ym,Number(t.dataset.n));render();return}
   if(a==='sub'){ui[t.dataset.k]=t.dataset.v;render();return}
   if(a==='fab') return expDialog(null,ui.view==='individual'?S.me:'casal');
-  if(a==='lock'){locked=true;render();window.scrollTo(0,0);return}
+  if(a==='who'){locked=true;render();window.scrollTo(0,0);return}
+  if(a==='setup-demo'){const na=($('#su-a')||{}).value,nb=($('#su-b')||{}).value;const theme=S.theme;S=fresh(true);S.theme=theme;S.setupDone=true;if(na&&na.trim()) S.names.a=na.trim();if(nb&&nb.trim()) S.names.b=nb.trim();save();render();return}
   if(a==='update') return updateApp();
   if(a==='theme'){S.theme=isDark()?'claro':'escuro';save();render();return}
   if(a==='unlock') return switchTo(t.dataset.p);
@@ -1179,6 +1230,12 @@ document.addEventListener('keydown',ev=>{
   if((ev.key==='Enter'||ev.key===' ')&&ev.target.classList&&ev.target.classList.contains('tap')){ev.preventDefault();ev.target.click()}
 });
 document.addEventListener('submit',ev=>{
+  if(ev.target.id==='setup-form'){
+    ev.preventDefault();
+    const na=$('#su-a').value.trim(),nb=$('#su-b').value.trim(),err=$('#su-err');
+    if(!na||!nb){err.textContent='Preencha os dois nomes para começar.';err.hidden=false;return}
+    S.names={a:na,b:nb};S.me=(document.querySelector('input[name="su-me"]:checked')||{}).value||'a';S.setupDone=true;save();render();return;
+  }
   if(ev.target.id!=='li-form') return;
   ev.preventDefault();
   const text=$('#li-text').value.trim();if(!text){$('#li-text').focus();return}
@@ -1199,7 +1256,6 @@ document.addEventListener('change',ev=>{
   if(el.id==='s-remind'){S.remindDays=Number(el.value);save();render()}
   if(el.name==='theme'&&!el.closest('dialog')){S.theme=el.value;save();render()}
   if(el.id==='s-restore'&&el.files[0]){restoreBackup(el.files[0]);el.value=''}
-  if(el.name==='who'&&el.closest('#who-seg')){const p=el.value;if(p!==S.me){if(S.pins[p]){render();askPin(p,()=>enterAs(p))}else{enterAs(p);save();render()}}}
   if(el.dataset.item){const i=curList().items.find(x=>x.id===el.dataset.item);if(i){i.done=el.checked;save();render()}}
   if(el.id==='s-na'||el.id==='s-nb'){const v=el.value.trim();if(v){S.names[el.id==='s-na'?'a':'b']=v;save();render()}}
 });

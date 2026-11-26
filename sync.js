@@ -166,7 +166,7 @@ document.addEventListener('click',async ev=>{
   const t=ev.target.closest('[data-act^="sync-"]');if(!t||!ON) return;
   const a=t.dataset.act;
   try{
-    if(a==='sync-login'){const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error) throw error}
+    if(a==='sync-login'||a==='sync-switch'){if(a==='sync-switch'){await sb.auth.signOut();session=null}const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname,queryParams:{prompt:'select_account'}}});if(error) throw error}
     if(a==='sync-create'){const p=(document.querySelector('input[name="sync-person"]:checked')||{}).value||S.me;const r=await sb.rpc('create_household',{p_person:p});if(r.error) throw r.error;setMember(r.data);info={state:'ok',msg:''};render();syncNow(true)}
     if(a==='sync-join'){const code=(document.getElementById('sync-code').value||'').trim();if(!code){toast('Digite o código.');return}const r=await sb.rpc('join_household',{p_code:code});if(r.error) throw r.error;setMember(r.data);info={state:'ok',msg:''};render();syncNow(true)}
     if(a==='sync-now'){toast('Sincronizando.');await syncNow(true)}
@@ -177,6 +177,7 @@ document.addEventListener('click',async ev=>{
 /* ---------- ligação com o app ---------- */
 window.syncCard=card;
 window.syncConnected=connected;
+window.syncPerson=()=>connected()?st.person:null;
 window.syncForget=forget;
 window.onLocalSave=()=>{if(connected()) schedule(1200)};
 if(ON){
