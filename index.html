@@ -333,13 +333,28 @@ body[data-me="a"]{background-image:var(--balls);background-size:340px 340px}
 body[data-me="a"] .hero{background:linear-gradient(115deg,var(--surface) 52%,color-mix(in srgb,var(--pa) 13%,var(--surface)))}
 @media (max-width:860px){.me-chip{margin-left:auto}}
 @media (max-width:520px){.me-sw{display:none}.me-chip{padding-right:14px}}
+
+.me-row{display:flex;align-items:center;gap:8px;min-width:0}
+.me-row .me-chip{flex:1}
+#sync-slot:empty{display:none}
+.sync-btn{width:46px;height:46px;border-radius:50%;border:0;background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center;cursor:pointer;color:var(--good);flex:none}
+.sync-btn.erro{color:var(--crit)}
+.sync-btn.sincronizando{color:var(--muted)}
+.sync-btn.sincronizando svg{animation:giro 1.1s linear infinite}
+@keyframes giro{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.sync-btn.sincronizando svg{animation:none}}
+body.locked .me-row{display:none}
+.sug{display:flex;flex-wrap:wrap;gap:6px}
+.sug:empty{display:none}
+.sug button{border:0;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:7px 14px;font-weight:500;font-size:.9rem;cursor:pointer;min-height:38px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:860px){.me-row{margin-left:auto}.me-row .me-chip{margin-left:0}}
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="rail">
     <div class="brand"><i></i>Conta a Dois</div>
-    <button class="me-chip" id="me-chip" data-act="who" title="Trocar de pessoa"></button>
+    <div class="me-row"><button class="me-chip" id="me-chip" data-act="who" title="Trocar de pessoa"></button><span id="sync-slot"></span></div>
     <nav class="links" id="rail-nav" aria-label="Seções"></nav>
   </aside>
   <main id="main"></main>
@@ -395,7 +410,7 @@ function installments(total,n){const base=Math.floor(total/n);return Array.from(
 
 /* ---------- estado ---------- */
 const KEY='contaadois.v2';
-const APP_VERSION='25/11 21:47';
+const APP_VERSION='25/11 22:09';
 const UA=navigator.userAgent||'';
 const IS_SAMSUNG=/SamsungBrowser/i.test(UA);
 const BROWSER=(()=>{let m=UA.match(/SamsungBrowser\/(\d+)/);if(m) return 'Internet da Samsung '+m[1];m=UA.match(/Chrome\/(\d+)/);if(m) return 'Chrome '+m[1];m=UA.match(/Version\/(\d+).*Safari/);if(m) return 'Safari '+m[1];return 'outro navegador'})();
@@ -523,6 +538,7 @@ let locked=!!(S.pins.a||S.pins.b); // com PIN criado, o app abre na tela de esco
 const ui={view:'casal',ym:curYM(),q:'',scope:'todas',cat:'',folder:'',dq:'',list:'',docTab:'cofre',subC:'geral',subI:'geral'};
 const N=p=>S.names[p]||(p==='a'?'Pessoa 1':'Pessoa 2');
 const hasDemo=()=>['expenses','settlements','bills','savings','docs','inventory'].some(k=>S[k].some(x=>x.demo))||S.lists.some(l=>l.items.some(x=>x.demo));
+const hasDoc=id=>!!id&&S.docs.some(d=>d.id===id); // o arquivo existe neste aparelho?
 const visible=e=>!(e.scope===other(S.me)&&e.payer===other(S.me));
 const monthExp=ym=>S.expenses.filter(e=>e.date.slice(0,7)===ym);
 const savedOf=g=>sum(g.moves,m=>m.amount);
@@ -548,8 +564,8 @@ function demoBanner(){return hasDemo()&&ui.view==='casal'?`<div class="banner"><
 function splitBar(e){if(e.scope!=='casal') return `<div class="split" title="Só de ${esc(N(e.scope))}"><i style="width:${e.scope==='a'?100:0}%"></i><b></b></div>`;return `<div class="split" title="${esc(N('a'))} ${e.shareA}% · ${esc(N('b'))} ${100-e.shareA}%"><i style="width:${e.shareA}%"></i><b></b></div>`}
 function expRow(e){
   const who=e.scope==='casal'?`casal ${e.shareA}/${100-e.shareA}`:`só de ${N(e.scope)}`;
-  return `<li class="row x tap" data-act="edit-exp" data-id="${e.id}" tabindex="0" role="button"><span class="cat-ic">${catIc(e.cat)}</span><div><strong>${esc(e.desc)}</strong><span class="sub">${esc(N(e.payer))} pagou · ${esc(who)}${e.demo?' · exemplo':''}</span></div>
-  <div class="amt-col"><span class="amt">${brl(e.amount)}</span>${splitBar(e)}</div>${e.docId?`<button class="icon-btn" data-act="view-doc" data-id="${e.docId}" aria-label="Ver comprovante">${ic('clip')}</button>`:'<span></span>'}</li>`;
+  return `<li class="row x tap" data-act="edit-exp" data-id="${e.id}" tabindex="0" role="button"><span class="cat-ic">${catIc(e.cat)}</span><div><strong>${esc(e.desc)}</strong><span class="sub">${esc(N(e.payer))} pagou · ${esc(who)}${e.docId&&!hasDoc(e.docId)?' · comprovante guardado em outro aparelho':''}${e.demo?' · exemplo':''}</span></div>
+  <div class="amt-col"><span class="amt">${brl(e.amount)}</span>${splitBar(e)}</div>${hasDoc(e.docId)?`<button class="icon-btn" data-act="view-doc" data-id="${e.docId}" aria-label="Ver comprovante">${ic('clip')}</button>`:'<span></span>'}</li>`;
 }
 // flores do perfil rosa: desenho próprio, cinco pétalas e miolo
 function blossom(x,y,s,rot,fill,center='#F4C04E'){let p='';for(let k=0;k<5;k++) p+=`<ellipse cx="0" cy="-13" rx="8.5" ry="13" transform="rotate(${k*72})"/>`;return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})"><g fill="${fill}">${p}</g><circle r="5.5" fill="${center}"/></g>`}
@@ -807,7 +823,7 @@ function vInventario(){
   let out='',last='';
   for(const i of list){
     if(i.room!==last){out+=`<li class="day">${esc(i.room)}</li>`;last=i.room}
-    out+=`<li class="row x tap" data-act="edit-inv" data-id="${i.id}" tabindex="0" role="button"><span class="cat-ic">${ic('box')}</span><div><strong>${esc(i.name)}</strong><span class="sub">${i.date?'Comprado em '+shortDate(i.date):'Sem data de compra'}${i.demo?' · exemplo':''}</span>${warrantyPill(i)}</div><div class="amt-col"><span class="amt">${i.value?brl(i.value):''}</span></div>${i.docId?`<button class="icon-btn" data-act="view-doc" data-id="${i.docId}" aria-label="Ver nota fiscal">${ic('clip')}</button>`:'<span></span>'}</li>`;
+    out+=`<li class="row x tap" data-act="edit-inv" data-id="${i.id}" tabindex="0" role="button"><span class="cat-ic">${ic('box')}</span><div><strong>${esc(i.name)}</strong><span class="sub">${i.date?'Comprado em '+shortDate(i.date):'Sem data de compra'}${i.docId&&!hasDoc(i.docId)?' · nota em outro aparelho':''}${i.demo?' · exemplo':''}</span>${warrantyPill(i)}</div><div class="amt-col"><span class="amt">${i.value?brl(i.value):''}</span></div>${hasDoc(i.docId)?`<button class="icon-btn" data-act="view-doc" data-id="${i.docId}" aria-label="Ver nota fiscal">${ic('clip')}</button>`:'<span></span>'}</li>`;
   }
   return head('Documentos',`<button class="btn primary" data-act="new-inv">Novo item</button>`)+demoBanner()+docTabs()+`
   <section class="grid g3"><div class="card tile"><span class="label">Itens cadastrados</span><span class="num">${list.length}</span></div><div class="card tile"><span class="label">Valor de compra somado</span><span class="num">${brl(sum(list,i=>i.value||0))}</span></div><div class="card tile"><span class="label">Ainda na garantia</span><span class="num">${inW}</span></div></section>
@@ -823,6 +839,7 @@ function vDocumentos(){
   const cards=list.map(d=>{const n=d.expiry?daysUntil(d.expiry):null;const ext=d.hasFile?(d.type.split('/')[1]||'arquivo').toUpperCase().slice(0,6):'EXEMPLO';
     return `<button class="card doc" data-act="view-doc" data-id="${d.id}"><div class="thumb" ${d.hasFile&&d.type.startsWith('image/')?`data-thumb="${d.id}"`:''}>${esc(ext)}</div><div class="info"><strong>${esc(d.name)}</strong><span class="sub">${esc(d.folder)} · ${shortDate(d.date)}</span>${d.tags.length?`<span class="sub">${d.tags.map(t=>'#'+esc(t)).join(' ')}</span>`:''}${n!==null?`<span><span class="pill ${n<0?'crit':n<=30?'warn':''}">${n<0?'Vencido':'Validade '+shortDate(d.expiry)}</span></span>`:''}</div></button>`}).join('')||'<p class="empty">Nenhum documento aqui.</p>';
   return head('Documentos',`<button class="btn primary" data-act="new-doc">Adicionar documento</button>`)+demoBanner()+docTabs()+`
+  <p class="sub">${window.vaultOn&&window.vaultOn()?'Os arquivos do cofre são enviados criptografados para a nuvem e abrem nos aparelhos de vocês dois. Comprovantes de gastos individuais ficam só no aparelho. O backup não inclui os arquivos.':'Os arquivos do cofre ficam guardados só neste aparelho: não entram no backup. Para sincronizá-los, crie a senha do cofre em Mais, Ajustes, Sincronização.'}</p>
   <div class="toolbar"><input type="search" id="d-q" placeholder="Buscar por nome ou etiqueta" value="${esc(ui.dq)}" aria-label="Buscar documentos"></div>
   <div class="chips"><button class="chip" data-act="folder" data-f="" aria-pressed="${!ui.folder}">Todas</button>${FOLDERS.map(f=>`<button class="chip" data-act="folder" data-f="${esc(f)}" aria-pressed="${ui.folder===f}">${esc(f)} (${S.docs.filter(d=>d.folder===f).length})</button>`).join('')}</div>
   <section class="docs" id="doc-grid">${cards}</section>`;
@@ -852,7 +869,7 @@ function vAjustes(){
 }
 
 function vMais(){
-  const items=[['listas','listas','Listas','Mercado e compras para a casa'],['documentos','documentos','Documentos','Cofre de notas e contratos, e o inventário da casa'],['fechamento','check','Fechamento do mês','Resumo do mês e acerto entre vocês'],['ajustes','ajustes','Ajustes','Sincronização, nomes, PIN, lembretes e backup']];
+  const items=[['listas','listas','Listas','Mercado e compras para a casa'],['documentos','documentos','Documentos','Cofre de notas e contratos, e inventário da casa'],['fechamento','check','Fechamento do mês','Resumo do mês e acerto entre vocês'],['ajustes','ajustes','Ajustes','Sincronização, nomes, PIN, lembretes e backup']];
   const dark=isDark();
   return head('Mais')+`<section class="grid g2">${items.map(([v,icn,t,d])=>`<button class="card more" data-act="go" data-v="${v}"><span class="q-ic">${ic(icn)}</span><span><strong>${t}</strong><span class="sub">${d}</span></span></button>`).join('')}${STANDALONE?`<button class="card more" data-act="theme"><span class="q-ic">${ic(dark?'sun':'moon')}</span><span><strong>${dark?'Usar modo claro':'Usar modo escuro'}</strong><span class="sub">Troca a aparência do app neste aparelho</span></span></button>`:''}</section>
   <div class="head"><span class="sub">Versão ${esc(APP_VERSION)}</span>${STANDALONE?`<button class="btn small" data-act="update">Buscar atualização</button>`:''}</div>`;
@@ -906,6 +923,7 @@ function render(){
   const navHtml=short=>VIEWS.map(k=>{const l=k==='individual'?N(S.me):(short?SHORT[k]:LABEL[k]);return `<button class="nav-btn" data-act="go" data-v="${k}" ${cur===k?'aria-current="page"':''}>${ic(k)}<span>${esc(l)}</span>${k==='casal'&&nAl?`<em class="badge" aria-label="${nAl} lembretes">${nAl}</em>`:''}</button>`}).join('');
   $('#rail-nav').innerHTML=navHtml(false);$('#tabbar').innerHTML=navHtml(true);
   $('#me-chip').innerHTML=`<span class="av">${avatar(S.me)}</span><span class="me-name">${esc(N(S.me))}</span><span class="me-sw">Trocar</span>`;
+  $('#sync-slot').innerHTML=window.syncBadge?window.syncBadge():'';
   $('#me-chip').setAttribute('aria-label','Usando como '+N(S.me)+'. Trocar de pessoa');
   freeUrls();
   $('#main').innerHTML=RENDER[ui.view]();
@@ -937,21 +955,39 @@ const seg=(name,opts,val)=>`<div class="seg">${opts.map(([v,l])=>`<label><input 
 const people=()=>[['a',N('a')],['b',N('b')]];
 
 const SCAN_PROMPT='A imagem é a foto de uma nota ou cupom fiscal brasileiro. Leia o valor total pago, o nome do estabelecimento e a data da compra. Responda só com um objeto JSON neste formato: {"total": 123.45, "loja": "nome curto do estabelecimento", "data": "AAAA-MM-DD", "categoria": "uma destas: '+CATS.join(', ')+'"}. Use ponto como separador decimal em "total". Se a data não estiver legível, use null. Se a imagem não for uma nota legível, responda {"erro": "motivo curto"}.';
-function expDialog(e,scope){
+// última categoria usada neste aparelho, para já vir marcada no próximo lançamento
+const UIKEY='contaadois.ui';
+function uiPref(){try{return JSON.parse(localStorage.getItem(UIKEY))||{}}catch(e){return {}}}
+function setUiPref(o){try{localStorage.setItem(UIKEY,JSON.stringify({...uiPref(),...o}))}catch(e){}}
+const baseDesc=d=>String(d).replace(/\s*\(\d+\/\d+\)$/,'').trim();
+// descrições já usadas (as mais recentes primeiro), com a categoria e a divisão do último lançamento igual
+function suggestions(q,scope){
+  q=q.trim().toLowerCase();if(q.length<2) return [];
+  const seen=new Set(),out=[];
+  for(const e of S.expenses.filter(visible).slice().sort((x,y)=>x.date<y.date?1:-1)){
+    const d=baseDesc(e.desc),k=d.toLowerCase();
+    if(e.billId||seen.has(k)||!k.includes(q)||(scope&&scope!=='casal'&&e.scope!==scope)) continue; // na aba individual, só sugestões individuais
+    seen.add(k);out.push({desc:d,cat:e.cat,scope:e.scope,shareA:e.shareA,amount:e.amount});
+    if(out.length>=4) break;
+  }
+  return out;
+}
+function expDialog(e,scope,preset){
   const isNew=!e;let scanFile=null;
-  e=e||{date:todayISO(),desc:'',amount:0,cat:'Mercado',payer:S.me,scope:scope||'casal',shareA:S.defaultShareA};
+  const lastCat=uiPref().lastCat;
+  e=e||{date:todayISO(),desc:'',amount:0,cat:CATS.includes(lastCat)?lastCat:'Mercado',payer:S.me,scope:scope||'casal',shareA:S.defaultShareA,...(preset||{})};
   openDlg(isNew?'Nova despesa':'Editar despesa',`
     ${isNew?`<div class="field" id="e-scan-box" hidden><label class="label" for="e-scan">Ler nota fiscal pela foto (preenche os campos abaixo)</label><input type="file" id="e-scan" accept="image/jpeg,image/png,image/webp"><span class="sub" id="e-scan-l" role="status"></span></div>`:''}
     <div class="two"><div class="field"><label class="label" for="e-amount">Valor${isNew?' total':''} (R$)</label><input type="text" inputmode="decimal" id="e-amount" name="amount" placeholder="0,00" value="${moneyInput(e.amount)}" autocomplete="off"></div>
     <div class="field"><label class="label" for="e-date">Data</label><input type="date" id="e-date" name="date" value="${e.date}"></div></div>
-    <div class="field"><label class="label" for="e-desc">Descrição</label><input type="text" id="e-desc" name="desc" maxlength="80" value="${esc(e.desc)}" placeholder="Ex.: mercado da semana"></div>
+    <div class="field"><label class="label" for="e-desc">Descrição</label><input type="text" id="e-desc" name="desc" maxlength="80" value="${esc(e.desc)}" placeholder="Ex.: mercado da semana" autocomplete="off">${isNew?'<div class="sug" id="e-sug" aria-label="Sugestões de lançamentos anteriores"></div>':''}</div>
     <div class="two"><div class="field"><label class="label" for="e-cat">Categoria</label><select id="e-cat" name="cat">${CATS.map(c=>`<option ${c===e.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
     ${isNew?`<div class="field"><label class="label" for="e-inst">Parcelas</label><select id="e-inst" name="inst">${[1,2,3,4,5,6,8,10,12,18,24].map(n=>`<option value="${n}">${n===1?'À vista':n+' vezes'}</option>`).join('')}</select></div>`:'<div></div>'}</div>
     <div class="field"><span class="label">Quem pagou</span>${seg('payer',people(),e.payer)}</div>
     <div class="field"><span class="label">De quem é a despesa</span>${seg('scope',[['casal','Do casal'],['a','Só '+N('a')],['b','Só '+N('b')]],e.scope)}</div>
     <div class="field" id="e-split"><label class="label" for="e-share">Divisão</label><input type="range" id="e-share" name="shareA" min="0" max="100" step="5" value="${e.shareA}"><span class="sub" id="e-share-l"></span></div>
     <p class="sub" id="e-inst-l" hidden></p>
-    ${isNew?`<div class="field"><label class="label" for="e-file">Comprovante (opcional)</label><input type="file" id="e-file" name="file" accept="image/*,application/pdf"></div>`:`<div><button type="button" class="btn small ghost del" data-act="del-exp" data-id="${e.id}">Excluir despesa</button></div>`}`,
+    ${isNew?`<div class="field"><label class="label" for="e-file">Comprovante (opcional)</label><input type="file" id="e-file" name="file" accept="image/*,application/pdf"></div>`:`<div class="toolbar"><button type="button" class="btn small" data-act="again-exp" data-id="${e.id}">Lançar de novo hoje</button><button type="button" class="btn small ghost del" data-act="del-exp" data-id="${e.id}">Excluir despesa</button></div>`}`,
   'Salvar',async fd=>{
     const amount=parseMoney(fd.get('amount'));
     if(!amount) return 'Informe um valor maior que zero, por exemplo 125,90.';
@@ -959,11 +995,12 @@ function expDialog(e,scope){
     if(!desc) return 'Dê uma descrição para a despesa.';
     if(!fd.get('date')) return 'Escolha a data.';
     const data={date:fd.get('date'),desc,amount,cat:fd.get('cat'),payer:fd.get('payer'),scope:fd.get('scope'),shareA:Number(fd.get('shareA'))};
+    setUiPref({lastCat:data.cat});
     if(isNew){
       const n=Number(fd.get('inst'))||1,parts=installments(amount,n),group=n>1?uid():undefined;
       let docId;
       const f0=fd.get('file'),f=(f0&&f0.size)?f0:scanFile;
-      if(f&&f.size){const r=await addDoc(f,{name:'Comprovante: '+desc,folder:'Notas fiscais',tags:[],expiry:''});if(typeof r==='string') return r;docId=r.id}
+      if(f&&f.size){const r=await addDoc(f,{name:'Comprovante: '+desc,folder:'Notas fiscais',tags:[],expiry:'',priv:data.scope!=='casal'&&data.scope===data.payer?data.scope:''});if(typeof r==='string') return r;docId=r.id}
       parts.forEach((v,i)=>{const ne={id:uid(),...data,amount:v,date:shiftDate(data.date,i)};if(n>1){ne.desc=desc+' ('+(i+1)+'/'+n+')';ne.group=group}if(docId) ne.docId=docId;S.expenses.push(ne)});
     }else{Object.assign(e,data);delete e.demo}
     ui.ym=data.date.slice(0,7);return null;
@@ -972,6 +1009,20 @@ function expDialog(e,scope){
     $('#e-share-l').innerHTML=`<span class="pa">${esc(N('a'))} ${sh}%${amt?' ('+brl(a)+')':''}</span> · <span class="pb">${esc(N('b'))} ${100-sh}%${amt?' ('+brl(amt-a)+')':''}</span>`;
     const n=f.elements.inst?Number(f.elements.inst.value):1,l=$('#e-inst-l');l.hidden=!(n>1&&amt);if(n>1&&amt) l.textContent=n+' lançamentos mensais de cerca de '+brl(Math.floor(amt/n))+', um por mês a partir da data escolhida.'};
   $('#dlg-form').addEventListener('input',upd);upd();
+  const sug=$('#e-sug');
+  if(sug){
+    let cur=[];
+    const paint=()=>{cur=suggestions($('#e-desc').value,scope);sug.innerHTML=cur.map((s,i)=>`<button type="button" data-sug="${i}">${esc(s.desc)} · ${esc(s.cat)}</button>`).join('')};
+    $('#e-desc').addEventListener('input',paint);
+    sug.addEventListener('click',ev=>{
+      const b=ev.target.closest('[data-sug]');if(!b) return;
+      const s=cur[Number(b.dataset.sug)],F=$('#dlg-form');if(!s) return;
+      F.elements.desc.value=s.desc;F.elements.cat.value=s.cat;
+      {const r=F.querySelector('input[name="scope"][value="'+s.scope+'"]');if(r) r.checked=true;F.elements.shareA.value=s.shareA}
+      if(!F.elements.amount.value.trim()) F.elements.amount.value=moneyInput(s.amount);
+      sug.innerHTML='';upd();F.elements.amount.focus();F.elements.amount.select();
+    });
+  }
   const sc=$('#e-scan');
   if(sc){
     $('#e-scan-box').hidden=!scanOK;
@@ -1109,10 +1160,21 @@ function listDialog(){
   openDlg('Nova lista',`<div class="field"><label class="label" for="l-name">Nome da lista</label><input type="text" id="l-name" name="name" maxlength="40" placeholder="Ex.: farmácia"></div>`,
   'Criar lista',fd=>{const name=String(fd.get('name')).trim();if(!name) return 'Dê um nome para a lista.';const l={id:uid(),name,items:[]};S.lists.push(l);ui.list=l.id;return null});
 }
+// fotos grandes são reduzidas antes de guardar, para ocupar menos espaço no aparelho e na nuvem
+async function shrinkImage(file){
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type||'')||file.size<700*1024||!window.createImageBitmap) return file;
+  const bmp=await createImageBitmap(file),max=2000,k=Math.min(1,max/Math.max(bmp.width,bmp.height));
+  const cv=document.createElement('canvas');cv.width=Math.round(bmp.width*k);cv.height=Math.round(bmp.height*k);
+  cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+  const out=await new Promise(res=>cv.toBlob(res,'image/jpeg',.82));
+  return out&&out.size<file.size?out:file;
+}
 async function addDoc(file,meta){
   if(file.size>20*1024*1024) return 'O arquivo passa de 20 MB. Escolha um menor.';
-  const d={id:uid(),name:meta.name,folder:meta.folder,tags:meta.tags,date:todayISO(),expiry:meta.expiry,type:file.type||'',size:file.size,hasFile:true};
-  try{await filePut(d.id,file)}catch(e){return 'Este navegador não deixou guardar o arquivo. Tente abrir o app fora do modo anônimo.'}
+  let blob=file;try{blob=await shrinkImage(file)}catch(e){blob=file}
+  const d={id:uid(),name:meta.name,folder:meta.folder,tags:meta.tags,date:todayISO(),expiry:meta.expiry,type:blob.type||file.type||'',size:blob.size,hasFile:true};
+  if(meta.priv) d.priv=meta.priv; // comprovante de gasto individual: não sincroniza
+  try{await filePut(d.id,blob)}catch(e){return 'Este navegador não deixou guardar o arquivo. Tente abrir o app fora do modo anônimo.'}
   S.docs.push(d);return d;
 }
 function docDialog(){
@@ -1125,13 +1187,25 @@ function docDialog(){
     const name=String(fd.get('name')).trim()||f.name;const tags=String(fd.get('tags')).split(',').map(t=>t.trim().replace(/^#/,'')).filter(Boolean).slice(0,8);
     const r=await addDoc(f,{name,folder:fd.get('folder'),tags,expiry:fd.get('expiry')||''});return typeof r==='string'?r:null});
 }
+async function docBlob(d){
+  let blob=null;try{blob=await fileGet(d.id)}catch(e){}
+  if(!blob&&window.vaultFetch) blob=await window.vaultFetch(d);
+  if(!blob) throw new Error('O arquivo não está neste aparelho.');
+  return blob;
+}
 async function viewDoc(id){
   const d=S.docs.find(x=>x.id===id);if(!d){toast('O arquivo deste comprovante não está neste aparelho.');return}
   let body=`<p class="sub">${esc(d.folder)} · adicionado em ${shortDate(d.date)}${d.expiry?' · validade '+shortDate(d.expiry):''}${d.size?' · '+(d.size/1024/1024).toFixed(1).replace('.',',')+' MB':''}</p>`;
   if(!d.hasFile) body+='<p>Este é um documento de exemplo, sem arquivo.</p>';
-  else if(d.type.startsWith('image/')){try{const blob=await fileGet(id);const u=URL.createObjectURL(blob);urls.push(u);body+=`<div class="viewer"><img src="${u}" alt="${esc(d.name)}"></div>`}catch(e){body+='<p>Não consegui abrir o arquivo neste navegador.</p>'}}
-  else body+='<p>O arquivo está guardado. A abertura de PDF dentro do app entra na próxima etapa.</p>';
-  body+=`<div><button type="button" class="btn small" data-act="del-doc" data-id="${d.id}">Excluir documento</button></div>`;
+  else{
+    openDlg(d.name,body+'<p class="sub">Abrindo o arquivo.</p>','',null);
+    try{
+      const blob=await docBlob(d),u=URL.createObjectURL(blob);urls.push(u);
+      if(d.type.startsWith('image/')) body+=`<div class="viewer"><img src="${u}" alt="${esc(d.name)}"></div>`;
+      else body+=STANDALONE?`<div><a class="btn primary" href="${u}" target="_blank" rel="noopener">Abrir o arquivo</a></div>`:'<p>O arquivo está guardado. A abertura de PDF funciona no app instalado.</p>';
+    }catch(e){body+=`<p class="err">${esc(String(e&&e.message||e))}</p>`}
+  }
+  body+=`<div><button type="button" class="btn small ghost del" data-act="del-doc" data-id="${d.id}">Excluir documento</button></div>`;
   openDlg(d.name,body,'',null);
 }
 
@@ -1195,6 +1269,7 @@ document.addEventListener('click',ev=>{
   if(a==='forgot-pin') return forgotPin(t.dataset.p);
   if(a==='new-exp') return expDialog(null,t.dataset.scope);
   if(a==='edit-exp') return expDialog(find('expenses',id));
+  if(a==='again-exp'){const e=find('expenses',id);dlg.close();return expDialog(null,null,{desc:baseDesc(e.desc),amount:e.amount,cat:e.cat,payer:e.payer,scope:e.scope,shareA:e.shareA})}
   if(a==='del-exp'){const e=find('expenses',id);return confirmDlg('Excluir despesa','Excluir "'+e.desc+'" de '+brl(e.amount)+'? O saldo entre vocês é recalculado.'+(e.group?' As outras parcelas continuam lançadas.':''),'Excluir',()=>removeFrom('expenses',id))}
   if(a==='settle') return settleDialog();
   if(a==='del-settle') return confirmDlg('Excluir acerto','Excluir este acerto? O saldo volta ao que era antes dele.','Excluir',()=>removeFrom('settlements',id));
@@ -1220,7 +1295,7 @@ document.addEventListener('click',ev=>{
   if(a==='del-inv'){const i=find('inventory',id);return confirmDlg('Excluir item','Excluir "'+i.name+'" do inventário? A nota fiscal continua no cofre.','Excluir',()=>removeFrom('inventory',id))}
   if(a==='new-doc') return docDialog();
   if(a==='view-doc') return viewDoc(id);
-  if(a==='del-doc'){const d=find('docs',id);return confirmDlg('Excluir documento','Excluir "'+d.name+'" do cofre? Não dá para desfazer.','Excluir',()=>{removeFrom('docs',id);S.expenses.forEach(e=>{if(e.docId===id) delete e.docId});S.inventory.forEach(i=>{if(i.docId===id) i.docId=''});fileDel(id)})}
+  if(a==='del-doc'){const d=find('docs',id);return confirmDlg('Excluir documento','Excluir "'+d.name+'" do cofre? Não dá para desfazer.','Excluir',()=>{removeFrom('docs',id);S.expenses.forEach(e=>{if(e.docId===id) delete e.docId});S.inventory.forEach(i=>{if(i.docId===id) i.docId=''});fileDel(id);if(window.vaultRemove) window.vaultRemove(id)})}
   if(a==='csv') return exportCsv();
   if(a==='backup') return exportBackup();
   if(a==='clear-demo') return confirmDlg('Apagar exemplos','Apagar todos os itens de exemplo? O que vocês mesmos lançaram fica.','Apagar exemplos',()=>{['expenses','settlements','bills','savings','docs','inventory'].forEach(k=>S[k]=S[k].filter(x=>!x.demo));S.inventory.forEach(i=>{if(i.docId&&!S.docs.some(d=>d.id===i.docId)) i.docId=''});S.lists.forEach(l=>l.items=l.items.filter(i=>!i.demo));S.budgets={casal:{},a:{},b:{}}});
