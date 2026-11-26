@@ -355,7 +355,7 @@ function installments(total,n){const base=Math.floor(total/n);return Array.from(
 
 /* ---------- estado ---------- */
 const KEY='contaadois.v2';
-const APP_VERSION='25/11 21:08';
+const APP_VERSION='25/11 21:13';
 const UA=navigator.userAgent||'';
 const IS_SAMSUNG=/SamsungBrowser/i.test(UA);
 const BROWSER=(()=>{let m=UA.match(/SamsungBrowser\/(\d+)/);if(m) return 'Internet da Samsung '+m[1];m=UA.match(/Chrome\/(\d+)/);if(m) return 'Chrome '+m[1];m=UA.match(/Version\/(\d+).*Safari/);if(m) return 'Safari '+m[1];return 'outro navegador'})();
